@@ -64,11 +64,11 @@ select
     query_acceleration_bytes_scanned,
     query_acceleration_partitions_scanned,
     query_acceleration_upper_limit_scale_factor
-from {{ source('snowflake_account_usage', 'query_history')}}
+from {{ source('snowflake_account_usage', 'query_history') }}
 
 {% if is_incremental() %}
-  -- must use end time in case query hasn't completed
-  where end_time > (select max(end_time) from {{ this }})
+    -- must use end time in case query hasn't completed
+    where end_time > (select max(end_time) from {{ this }})
 {% endif %}
 
 order by start_time
