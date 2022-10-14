@@ -2,6 +2,8 @@ name: 'dbt_snowflake_monitoring'
 version: '1.0.0'
 config-version: 2
 
+profile: dbt_snowflake_monitoring
+
 model-paths: ["models"]
 
 clean-targets:
