@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: snowflake_account_usage
+    database: snowflake
+    schema: account_usage
+
+    tables:
+      - name: query_history
+      - name: warehouse_metering_history
+
+  - name: snowflake_organization_usage
+    database: snowflake
+    schema: organization_usage
+
+    tables:
+      - name: rate_sheet_daily

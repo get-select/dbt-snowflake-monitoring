@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: warehouse_metering_history
+    description: An incrementally materialized copy of the snowflake.account_usage.warehouse_metering_history view. It can be used to return the hourly credit usage for a single warehouse (or all the warehouses in your account) within the last 365 days (1 year). It contains 1 row per hour per warehouse.
+    columns:
+      - name: start_time
+        description: The date and beginning of the hour (in the UTC time zone) in which the warehouse usage took place.
+      - name: end_time
+        description: The date and end of the hour (in the UTC time zone) in which the warehouse usage took place.
+      - name: warehouse_id
+        description: Internal/system-generated identifier for the warehouse.
+      - name: warehouse_name
+        description: Name of the warehouse.
+      - name: credits_used
+        description: Total number of credits used for the warehouse in the hour. This is a sum of CREDITS_USED_COMPUTE and CREDITS_USED_CLOUD_SERVICES. This value does not take into account the adjustment for cloud services, and may therefore be greater than your actual credit consumption.
+      - name: credits_used_compute
+        description: Number of credits used for the warehouse in the hour.
+      - name: credits_used_cloud_services
+        description: Number of credits used for cloud services in the hour.

@@ -1,0 +1,9 @@
+name: 'dbt_snowflake_monitoring'
+version: '1.0.0'
+config-version: 2
+
+model-paths: ["models"]
+
+clean-targets:
+  - target
+  - dbt_packages
