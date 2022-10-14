@@ -148,7 +148,6 @@ credits_billed_daily AS (
         DATE(hour) AS date,
         SUM(credits_used_compute) AS daily_credits_used_compute,
         SUM(credits_used_cloud_services) AS daily_credits_used_cloud_services,
-        daily_credits_used_cloud_services/daily_credits_used_compute > 0.1 AS include_cloud_services,
         GREATEST(daily_credits_used_cloud_services - daily_credits_used_compute*0.1, 0) AS daily_billable_cloud_services
     FROM credits_billed_hourly
     GROUP BY 1
