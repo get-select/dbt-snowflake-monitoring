@@ -1,0 +1,13 @@
+name: 'dbt_snowflake_monitoring_tests'
+version: '1.0.0'
+config-version: 2
+
+profile: dbt_snowflake_monitoring
+
+models:
+  dbt_snowflake_monitoring:
+    enabled: true
+
+clean-targets:
+  - target
+  - dbt_packages

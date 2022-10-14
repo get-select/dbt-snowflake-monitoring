@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: rate_sheet_daily≈
+    description: An incrementally materialized copy of the snowflake.organization.rate_sheet_daily view. It can be used to get the effective rates used for calculating usage in the organization currency based on credits used for all Snowflake accounts in your organization. It contains 1 row per day per rate in Snowflake account (some days can have more than 1 rate for a given usage_type, usually when the contract is updated).
+    columns:
+      - name: date
+        description: Date (in the UTC time zone) for the effective price.
+      - name: organization_name
+        description: Name of the organization.
+      - name: contract_number
+        description: Snowflake contract number for the organization.
+      - name: account_name
+        description: Name of the account.
+      - name: account_locator
+        description: Locator for the account.
+      - name: region
+        description: Name of the region where the account is located.
+      - name: service_level
+        description: Service level of the Snowflake account (Standard, Enterprise, Business Critical, etc.).
+      - name: usage_type
+        description: The type of usage, which can be one of compute, storage, etc.
+      - name: currency
+        description: The currency of the effective_rate.
+      - name: effective_rate
+        description: The rate after applying any applicable discounts per the contract for the organization.
+      - name: service_type
+        description: The type of service, which can be one of compute or storage.

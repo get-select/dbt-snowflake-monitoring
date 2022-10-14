@@ -1,0 +1,20 @@
+
+version: 2
+
+models:
+  - name: cost_per_query
+    description: A model to help you identify expensive Snowflake queries. It includes 1 row per query, along with the estimated query cost.
+    columns:
+      - name: query_id
+        description: Internal/system-generated identifier for the SQL statement.
+        tests:
+          - unique
+          - not_null
+      - name: start_time
+        description: Query statement start time (in the UTC time zone). The table is naturally clustered on this column, meaning your queries will run much faster if you filter records using this column.
+      - name: compute_cost
+        description: Compute costs associated with the query, in the primary currency of your account. Can be 0 if the query did not run on a warehouse.
+      - name: cloud_services_cost
+        description: Cloud service costs associated with the query, in the primary currency of your account. Can be 0 if total cloud services credits consumption was less than 10% of total compute credits consumption on that day.
+      - name: query_cost
+        description: Total cost associated with the query, calculated as sum of compute_cost and cloud_services_cost, in the primary currency of your account.
