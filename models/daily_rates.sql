@@ -34,7 +34,7 @@ rate_sheet_daily as (
         service_type
     from {{ ref('rate_sheet_daily') }}
     where
-        account_name='{{ current_account }}'
+        account_locator='{{ current_account }}'
 ),
 rates_date_range as (
     select
