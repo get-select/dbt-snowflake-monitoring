@@ -1,47 +1,12 @@
 {{ config(materialized='table') }}
 
 with
-daily_rates_base as (
-    select
-        date,
-        effective_rate,
-        max(date) over() as latest_date
-    from {{ ref('rate_sheet_daily') }}
-    where usage_type = 'compute'
-),
-
-/*
-Some days have more than 1 rate, likely due to a new contract. Just pick the higher rate for that day.
-*/
-daily_rates_deduped as (
-    select
-        date,
-        get(array_agg(effective_rate) within group (order by effective_rate desc), 0) as effective_rate,
-        any_value(latest_date) as latest_date
-    from daily_rates_base
-    group by 1
-),
-
-/*
-rate_sheet_daily will always be behind by 1 day
-to avoid losing queries from today when we inner join, we will
-add a new record to rate sheet daily for the missing day, using
-the most recent effective_rate
-*/
 daily_rates as (
     select
         date,
         effective_rate
-    from daily_rates_deduped
-
-    union all
-
-    select
-        dateadd('day', 1, latest_date) as date,
-        effective_rate
-    from daily_rates_deduped
-    where
-        date = latest_date
+    from {{ ref('daily_rates') }}
+    where usage_type = 'compute'
 ),
 /*
 Calculate a "stop threshold", which tells us the latest timestamp we should process data up until.

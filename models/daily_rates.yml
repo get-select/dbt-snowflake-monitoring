@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: daily_rates
+    description: A copy of snowflake.organization_usage.rate_sheet_daily for the current Snowflake account, with missing dates imputed.
+    columns:
+      - name: date
+        description: Date (in the UTC time zone) for the effective price.
+      - name: service_type
+        description: The type of service, which can be one of compute or storage.
+      - name: usage_type
+        description: The type of usage, which can be one of compute, storage, etc.
+      - name: effective_rate
+        description: The rate after applying any applicable discounts per the contract for the organization.
