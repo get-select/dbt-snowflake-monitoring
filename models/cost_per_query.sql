@@ -33,31 +33,29 @@ stop_threshold as (
 
 filtered_queries as (
     select
-        query_history.query_id,
-        query_history.query_text as original_query_text,
-        query_history.credits_used_cloud_services,
-        query_history.warehouse_id,
-        query_history.warehouse_size is not null as ran_on_warehouse,
+        query_id,
+        query_text as original_query_text,
+        credits_used_cloud_services,
+        warehouse_id,
+        warehouse_size is not null as ran_on_warehouse,
         timeadd(
             'millisecond',
-            query_history.queued_overload_time + query_history.compilation_time
-            + query_history.queued_provisioning_time + query_history.queued_repair_time +
-            query_history.list_external_files_time,
-            query_history.start_time
+            queued_overload_time + compilation_time
+            + queued_provisioning_time + queued_repair_time +
+            list_external_files_time,
+            start_time
         ) as execution_start_time,
-        query_history.start_time,
-        query_history.end_time
+        start_time,
+        end_time
     from {{ ref('query_history') }}
-    cross join stop_threshold
-    where
-        query_history.end_time <= stop_threshold.latest_ts
+    where end_time <= (select latest_ts from stop_threshold)
 ),
 
 hours_list as (
     select
         dateadd(
             'hour',
-            '-' || row_number() over (order by null),
+            '-' || row_number() over (order by seq4() asc),
             dateadd('day', '+1', current_date)
         ) as hour_start,
         dateadd('hour', '+1', hour_start) as hour_end
@@ -67,13 +65,13 @@ hours_list as (
 -- 1 row per hour a query ran
 query_hours as (
     select
-        hl.hour_start,
-        hl.hour_end,
+        hours_list.hour_start,
+        hours_list.hour_end,
         queries.*
-    from hours_list as hl
+    from hours_list
     inner join filtered_queries as queries
-        on hl.hour_start >= date_trunc('hour', queries.execution_start_time)
-            and hl.hour_start < queries.end_time
+        on hours_list.hour_start >= date_trunc('hour', queries.execution_start_time)
+            and hours_list.hour_start < queries.end_time
             and queries.ran_on_warehouse
 ),
 
@@ -160,4 +158,4 @@ inner join credits_billed_daily
     on date(all_queries.start_time) = credits_billed_daily.date
 inner join daily_rates
     on date(all_queries.start_time) = daily_rates.date
-order by all_queries.start_time
+order by all_queries.start_time asc
