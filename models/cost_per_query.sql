@@ -111,6 +111,7 @@ cost_per_query as (
     select
         query_id,
         any_value(start_time) as start_time,
+        any_value(execution_start_time) AS execution_start_time,
         sum(allocated_compute_cost_in_hour) as compute_cost,
         any_value(credits_used_cloud_services) as credits_used_cloud_services
     from query_cost
@@ -131,6 +132,7 @@ all_queries as (
     select
         query_id,
         start_time,
+        execution_start_time,
         compute_cost,
         credits_used_cloud_services
     from cost_per_query
@@ -140,6 +142,7 @@ all_queries as (
     select
         query_id,
         start_time,
+        execution_start_time,
         0 as compute_cost,
         credits_used_cloud_services
     from filtered_queries
@@ -150,6 +153,7 @@ all_queries as (
 select
     all_queries.query_id,
     all_queries.start_time,
+    all_queries.execution_start_time,
     all_queries.compute_cost,
     (all_queries.credits_used_cloud_services / credits_billed_daily.daily_credits_used_cloud_services * credits_billed_daily.daily_billable_cloud_services) * daily_rates.effective_rate as cloud_services_cost,
     all_queries.compute_cost + cloud_services_cost as query_cost

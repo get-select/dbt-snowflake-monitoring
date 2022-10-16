@@ -12,6 +12,8 @@ models:
           - not_null
       - name: start_time
         description: Query statement start time (in the UTC time zone). The table is naturally clustered on this column, meaning your queries will run much faster if you filter records using this column.
+      - name: execution_start_time
+        description: When the query began executing on the warehouse (in the UTC time zone). This will always be after the start_time.
       - name: compute_cost
         description: Compute costs associated with the query, in the primary currency of your account. Can be 0 if the query did not run on a warehouse.
       - name: cloud_services_cost
