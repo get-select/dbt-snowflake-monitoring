@@ -95,18 +95,7 @@ tox
 
 ### SQLFluff
 
-We use SQLFluff to keep SQL style consistent. A GitHub action automatically tests pull requests and adds annotations where there are failures. SQLFluff can also be run locally with `tox`. To install tox, we recommend using `pipx`.
-
-Install pipx:
-```bash
-pip install pipx
-pipx ensurepath
-```
-
-Install tox:
-```bash
-pipx install tox
-```
+We use SQLFluff to keep SQL style consistent. By installing `pre-commit` per the initial setup guide above, SQLFluff will run automatically when you make a commit locally. A GitHub action automatically tests pull requests and adds annotations where there are failures.
 
 Lint all models in the /models directory:
 ```bash
