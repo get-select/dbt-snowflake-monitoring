@@ -2,6 +2,4 @@ target/
 dbt_packages/
 logs/
 logfile
-poetry.lock
-pyproject.toml
 .DS_Store
