@@ -145,7 +145,7 @@ all_queries as (
     from filtered_queries
     where
         not ran_on_warehouse
-),
+)
 
 select
     all_queries.query_id,
