@@ -1,0 +1,19 @@
+repos:
+-   repo: local
+    hooks:
+    -   id: sqlfluff-fix
+        name: SQLFluff Fix
+        description: This hook runs sqlfluff fix.
+        entry: tox -e fix --
+        files: ^models/
+        require_serial: true
+        types: [sql]
+        language: system
+    -   id: sqlfluff-lint
+        name: SQLFluff Lint
+        description: This hook runs sqlfluff lint.
+        entry: tox -e lint --
+        files: ^models/
+        require_serial: true
+        types: [sql]
+        language: system
