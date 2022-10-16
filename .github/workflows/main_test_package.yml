@@ -44,4 +44,4 @@ jobs:
         run: python3 -m pip install tox
 
       - name: Lint dbt models
-        run: tox
+        run: tox -e lint_all
