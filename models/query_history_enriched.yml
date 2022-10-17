@@ -164,15 +164,15 @@ models:
       # New columns
       - name: ran_on_warehouse
         description: True if the query executed in a virtual warehouse.
-      - name: gb_scanned
+      - name: data_scanned_gb
         description: Number of gb scanned by this statement.
-      - name: gb_spilled_to_local_storage
+      - name: data_spilled_to_local_storage_gb
         description: Volume of data (in GB) spilled to local disk on the warehouse nodes.
-      - name: gb_spilled_to_remote_storage
+      - name: data_spilled_to_remote_storage_gb
         description: Volume of data (in GB) spilled to remote disk (i.e. AWS S3, Google Cloud Storage, Azure Blob).
-      - name: gb_sent_over_the_network
+      - name: data_sent_over_the_network_gb
         description: Volume of data (in GB) sent over the network.
-      - name: gb_scanned_from_cache
+      - name: data_scanned_from_cache_gb
         description: Volume of data (in GB) scanned from the local disk cache.
       - name: query_text_no_comments
         description: Contains the original query text stripped of any comments.
