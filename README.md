@@ -1,13 +1,13 @@
 # dbt_snowflake_monitoring
 
-A dbt package to help you monitor Snowflake performance and costs.
+A dbt package to for monitoring Snowflake performance and costs.
 
 ## Installation
 
-Ensure that the Snowflake role used by your dbt project has permission to read the required `snowflakeaccount_usage` and `snowflake.organization` views. If it does not, you can run the following SQL to grant the required permissions
+Ensure that the Snowflake role used by your dbt project has permission to read the required `snowflake.account_usage` and `snowflake.organization` views. If it does not, you can run the following SQL to grant the required permissions:
 
 ```sql
-GRANT IMPORTED PRIVILEGES ON DATABASE SNOWFLAKE TO ROLE YOUR_DBT_ROLE_NAME;
+grant imported privileges on database snowflake to role your_dbt_role_name;
 ```
 
 We are currently in the process of getting this package added to the dbt package hub. In the meantime, you can add it to your package by adding the following to your `packages.yml` file:
@@ -32,8 +32,8 @@ models:
 ## Example Usage
 
 ```sql
-USE DATABASE your_default_dbt_database
-USE SCHEMA your_default_dbt_schema
+use database your_default_dbt_database
+use schema your_default_dbt_schema
 ```
 
 **Find the top 10 most expensive queries in your Snowflake account**

@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: spend_daily
+    description: An enriched version of the query_history model. Contains 1 row per query (query_id).
+    columns:
+    - name: usage_date
+      description: Primary key. Date of spend.
+    - name: usage_type
+      description: Top level spend category. One of storage, warehouse compute, serverless or cloud services.
+    - name: usage_type_subcategory_1
+      description: |
+        Usage type subcategory.  
+        ```
+        | usage_type        | usage_type_subcategory_1 |  
+        |-------------------|--------------------------|  
+        | storage           | table and time travel    |  
+        | ..                | stage                    |  
+        | ..                | failsafe                 |  
+        | warehouse compute | <warehouse names>        |  
+        | cloud services    | <warehouse names>        |  
+        | ..                | cloud services only      |  
+        | serverless        | automatic clustering     |  
+        | ..                | materialized views       |  
+        | ..                | snowpipe                 |  
+        | ..                | query acceleration       |  
+        | ..                | replication              |  
+        | ..                | search optimization      |
+        ```
+    - name: spend_usd
+      description: Spend in USD associated with the usage type.
