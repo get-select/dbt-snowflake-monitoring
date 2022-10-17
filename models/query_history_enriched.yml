@@ -1,0 +1,180 @@
+version: 2
+
+models:
+  - name: query_history_enriched
+    description: An enriched version of the query_history model. Contains 1 row per query (query_id).
+    columns:
+      - name: query_id
+        description: Primary key. Internal/system-generated identifier for the SQL statement.
+      - name: query_text
+        description: Text of the SQL statement.
+      - name: database_id
+        description: Internal/system-generated identifier for the database that was in use.
+      - name: database_name
+        description: Database that was in use at the time of the query.
+      - name: schema_id
+        description: Internal/system-generated identifier for the schema that was in use.
+      - name: schema_name
+        description: Schema that was in use at the time of the query.
+      - name: query_type
+        description: DML, query, etc. If the query failed, then the query type may be UNKNOWN.
+      - name: session_id
+        description: Session that executed the statement.
+      - name: user_name
+        description: User who issued the query.
+      - name: role_name
+        description: Role that was active in the session at the time of the query.
+      - name: warehouse_id
+        description: Internal/system-generated identifier for the warehouse that was used.
+      - name: warehouse_name
+        description: Warehouse that the query executed on, if any.
+      - name: warehouse_size
+        description: Size of the warehouse when this statement executed.
+      - name: warehouse_type
+        description: Type of the warehouse when this statement executed.
+      - name: cluster_number
+        description: The cluster (in a multi-cluster warehouse) that this statement executed on.
+      - name: query_tag
+        description: Query tag set for this statement through the QUERY_TAG session parameter.
+      - name: execution_status
+        description: "Execution status for the query. Valid values: `success`, `fail`, `incident`."
+      - name: error_code
+        description: Error code, if the query returned an error.
+      - name: error_message
+        description: Error message, if the query returned an error.
+      - name: start_time
+        description: Statement start time (in the UTC time zone). The table is naturally clustered on this column, meaning your queries will run much faster if you filter records using this column.
+      - name: end_time
+        description: Statement end time (in the UTC time zone).
+      - name: bytes_scanned
+        description: Number of bytes scanned by this statement.
+      - name: percentage_scanned_from_cache
+        description: The percentage of data scanned from the local disk cache. The value ranges from 0.0 to 1.0. Multiply by 100 to get a true percentage.
+      - name: bytes_written
+        description: Number of bytes written (e.g. when loading into a table).
+      - name: bytes_written_to_result
+        description: Number of bytes written to a result object. For example, `select * from . . .` would produce a set of results in tabular format representing each field in the selection. In general, the results object represents whatever is produced as a result of the query, and BYTES_WRITTEN_TO_RESULT represents the size of the returned result.
+      - name: bytes_read_from_result
+        description: Number of bytes read from a result object.
+      - name: rows_produced
+        description: Number of rows produced by this statement.
+      - name: rows_inserted
+        description: Number of rows inserted by the query.
+      - name: rows_updated
+        description: Number of rows updated by the query.
+      - name: rows_deleted
+        description: Number of rows deleted by the query.
+      - name: rows_unloaded
+        description: Number of rows unloaded during data export.
+      - name: bytes_deleted
+        description: Number of bytes deleted by the query.
+      - name: partitions_scanned
+        description: Number of micro-partitions scanned.
+      - name: partitions_total
+        description: Total micro-partitions of all tables included in this query.
+      - name: bytes_spilled_to_local_storage
+        description: Volume of data spilled to local disk on the warehouse nodes.
+      - name: bytes_spilled_to_remote_storage
+        description: Volume of data spilled to remote disk (i.e. AWS S3, Google Cloud Storage, Azure Blob).
+      - name: bytes_sent_over_the_network
+        description: Volume of data sent over the network.
+      - name: outbound_data_transfer_cloud
+        description: Target cloud provider for statements that unload data to another region and/or cloud.
+      - name: outbound_data_transfer_region
+        description: Target region for statements that unload data to another region and/or cloud.
+      - name: outbound_data_transfer_bytes
+        description: Number of bytes transferred in statements that unload data to another region and/or cloud.
+      - name: inbound_data_transfer_cloud
+        description: Source cloud provider for statements that load data from another region and/or cloud.
+      - name: inbound_data_transfer_region
+        description: Source region for statements that load data from another region and/or cloud.
+      - name: inbound_data_transfer_bytes
+        description: Number of bytes transferred in statements that load data from another region and/or cloud.
+      - name: credits_used_cloud_services
+        description: Number of credits used for cloud services.
+      - name: release_version
+        description: "Release version in the format of `<major_release>.<minor_release>.<patch_release>`."
+      - name: external_function_total_invocations
+        description: The aggregate number of times that this query called remote services. For important details, see the Usage Notes.
+      - name: external_function_total_sent_rows
+        description: The total number of rows that this query sent in all calls to all remote services.
+      - name: external_function_total_received_rows
+        description: The total number of rows that this query received from all calls to all remote services.
+      - name: external_function_total_sent_bytes
+        description: The total number of bytes that this query sent in all calls to all remote services.
+      - name: external_function_total_received_bytes
+        description: The total number of bytes that this query received from all calls to all remote services.
+      - name: query_load_percent
+        description: The approximate percentage of active compute resources in the warehouse for this query execution.
+      - name: is_client_generated_statement
+        description: Indicates whether the query was client-generated. These tend to be queries from the Snowflake UI (i.e. Snowsight or the Classic Console).
+      - name: query_acceleration_bytes_scanned
+        description: Number of bytes scanned by the query acceleration service.
+      - name: query_acceleration_partitions_scanned
+        description: Number of partitions scanned by the query acceleration service.
+      - name: query_acceleration_upper_limit_scale_factor
+        description: Upper limit scale factor that a query would have benefited from.
+
+      # Renamed existing columns
+      - name: total_elapsed_time_ms
+        description: Elapsed time (in milliseconds).
+      - name: compilation_time_ms
+        description: Compilation time (in milliseconds).
+      - name: execution_time_ms
+        description: Execution time (in milliseconds).
+      - name: queued_provisioning_time_ms
+        description: Time (in milliseconds) spent in the warehouse queue, waiting for the warehouse compute resources to provision, due to warehouse creation, resume, or resize.
+      - name: queued_repair_time_ms
+        description: Time (in milliseconds) spent in the warehouse queue, waiting for compute resources in the warehouse to be repaired.
+      - name: queued_overload_time_ms
+        description: Time (in milliseconds) spent in the warehouse queue, due to the warehouse being overloaded by the current query workload.
+      - name: transaction_blocked_time_ms
+        description: Time (in milliseconds) spent blocked by a concurrent DML.
+      - name: list_external_files_time_ms
+        description: Time (in milliseconds) spent listing external files.
+
+      # Columns above, but in seconds
+      - name: total_elapsed_time_s
+        description: Elapsed time (in seconds).
+      - name: compilation_time_s
+        description: Compilation time (in seconds).
+      - name: execution_time_s
+        description: Execution time (in seconds).
+      - name: queued_provisioning_time_s
+        description: Time (in seconds) spent in the warehouse queue, waiting for the warehouse compute resources to provision, due to warehouse creation, resume, or resize.
+      - name: queued_repair_time_s
+        description: Time (in seconds) spent in the warehouse queue, waiting for compute resources in the warehouse to be repaired.
+      - name: queued_overload_time_s
+        description: Time (in seconds) spent in the warehouse queue, due to the warehouse being overloaded by the current query workload.
+      - name: transaction_blocked_time_s
+        description: Time (in seconds) spent blocked by a concurrent DML.
+      - name: list_external_files_time_s
+        description: Time (in seconds) spent listing external files.
+
+      # From cost_per_query model
+      - name: execution_start_time
+        description: When the query began executing on the warehouse (in the UTC time zone). This will always be after the start_time.
+      - name: compute_cost
+        description: Compute costs associated with the query, in the primary currency of your account. Can be 0 if the query did not run on a warehouse.
+      - name: cloud_services_cost
+        description: Cloud service costs associated with the query, in the primary currency of your account. Can be 0 if total cloud services credits consumption was less than 10% of total compute credits consumption on that day.
+      - name: query_cost
+        description: Total cost associated with the query, calculated as sum of compute_cost and cloud_services_cost, in the primary currency of your account.
+
+      # New columns
+      - name: ran_on_warehouse
+        description: True if the query executed in a virtual warehouse.
+      - name: data_scanned_gb
+        description: Number of gb scanned by this statement.
+      - name: data_spilled_to_local_storage_gb
+        description: Volume of data (in GB) spilled to local disk on the warehouse nodes.
+      - name: data_spilled_to_remote_storage_gb
+        description: Volume of data (in GB) spilled to remote disk (i.e. AWS S3, Google Cloud Storage, Azure Blob).
+      - name: data_sent_over_the_network_gb
+        description: Volume of data (in GB) sent over the network.
+      - name: data_scanned_from_cache_gb
+        description: Volume of data (in GB) scanned from the local disk cache.
+      - name: query_text_no_comments
+        description: Contains the original query text stripped of any comments.
+      - name: dbt_metadata
+        description: Metadata from the JSON string added to the query by dbt. Null if no metadata was added.
