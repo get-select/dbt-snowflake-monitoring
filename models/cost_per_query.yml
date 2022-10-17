@@ -6,7 +6,7 @@ models:
     description: A model to help you identify expensive Snowflake queries. It includes 1 row per query, along with the estimated query cost.
     columns:
       - name: query_id
-        description: Internal/system-generated identifier for the SQL statement.
+        description: Primary key. Internal/system-generated identifier for the SQL statement.
         tests:
           - unique
           - not_null

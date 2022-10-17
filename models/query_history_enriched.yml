@@ -5,7 +5,7 @@ models:
     description: An enriched version of the query_history model. Contains 1 row per query (query_id).
     columns:
       - name: query_id
-        description: Internal/system-generated identifier for the SQL statement.
+        description: Primary key. Internal/system-generated identifier for the SQL statement.
       - name: query_text
         description: Text of the SQL statement.
       - name: database_id

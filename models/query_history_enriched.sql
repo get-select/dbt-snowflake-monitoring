@@ -6,17 +6,17 @@ query_history as (
         *,
 
         -- this removes comments enclosed by /* <comment text> */
-        REGEXP_REPLACE(query_text, '(/\*.*\*/)') as _query_text_no_comments,
+        regexp_replace(query_text, '(/\*.*\*/)') as _query_text_no_comments,
         -- this removes single line comments starting with -- and either ending with a new line or end of string
-        REGEXP_REPLACE(_query_text_no_comments, '(--.*$)|(--.*\n)') as query_text_no_comments,
+        regexp_replace(_query_text_no_comments, '(--.*$)|(--.*\n)') as query_text_no_comments,
 
-        REGEXP_SUBSTR(query_text, '/\\*\\s({"app":\\s"dbt".*})\\s\\*/', 1, 1, 'ie') as _dbt_json_meta,
-        TRY_PARSE_JSON(_dbt_json_meta) as dbt_metadata
+        regexp_substr(query_text, '/\\*\\s({"app":\\s"dbt".*})\\s\\*/', 1, 1, 'ie') as _dbt_json_meta,
+        try_parse_json(_dbt_json_meta) as dbt_metadata
 
     from {{ ref('query_history') }}
 
     {% if is_incremental() %}
-        where end_time > (select MAX(end_time) from {{ this }})
+        where end_time > (select max(end_time) from {{ this }})
     {% endif %}
 ),
 
@@ -24,7 +24,7 @@ cost_per_query as (
     select *
     from {{ ref('cost_per_query') }}
     {% if is_incremental() %}
-        where end_time > (select MAX(end_time) from {{ this }})
+        where end_time > (select max(end_time) from {{ this }})
     {% endif %}
 )
 
@@ -104,11 +104,11 @@ select
 
     -- New columns
     query_history.warehouse_size is not null as ran_on_warehouse,
-    query_history.bytes_scanned / POWER(1024, 3) as gb_scanned,
+    query_history.bytes_scanned / power(1024, 3) as gb_scanned,
     gb_scanned * query_history.percentage_scanned_from_cache as gb_scanned_from_cache,
-    query_history.bytes_spilled_to_local_storage / POWER(1024, 3) as gb_spilled_to_local_storage,
-    query_history.bytes_spilled_to_remote_storage / POWER(1024, 3) as gb_spilled_to_remote_storage,
-    query_history.bytes_sent_over_the_network / POWER(1024, 3) as gb_sent_over_the_network,
+    query_history.bytes_spilled_to_local_storage / power(1024, 3) as gb_spilled_to_local_storage,
+    query_history.bytes_spilled_to_remote_storage / power(1024, 3) as gb_spilled_to_remote_storage,
+    query_history.bytes_sent_over_the_network / power(1024, 3) as gb_sent_over_the_network,
     query_history.query_text_no_comments,
     query_history.dbt_metadata,
 
