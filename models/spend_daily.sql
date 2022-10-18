@@ -60,9 +60,9 @@ compute_spend_daily as (
         sum(metering_history.credits_used_compute * daily_rates.effective_rate) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'compute'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'WAREHOUSE_METERING'
@@ -74,7 +74,7 @@ cloud_services_multiplier as (
         dates.date,
         sum(metering_daily_history.credits_adjustment_cloud_services) as sum_credits_adjustment_cloud_services,
         sum(metering_daily_history.credits_used_cloud_services) as sum_credits_used_cloud_services,
-        (sum_credits_used_cloud_services + sum_credits_adjustment_cloud_services) / sum_credits_used_cloud_services as cloud_services_multiplier
+        div0(sum_credits_used_cloud_services + sum_credits_adjustment_cloud_services, sum_credits_used_cloud_services) as cloud_services_multiplier
     from dates
     left join snowflake.account_usage.metering_daily_history on
         dates.date = metering_daily_history.usage_date
@@ -89,11 +89,11 @@ cloud_services_spend_daily as (
         sum(metering_history.credits_used_cloud_services * daily_rates.effective_rate * cloud_services_multiplier.cloud_services_multiplier) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join cloud_services_multiplier on
         dates.date = cloud_services_multiplier.date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'WAREHOUSE_METERING'
@@ -108,9 +108,9 @@ automatic_clustering_spend_daily as (
         sum(metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'AUTO_CLUSTERING'
@@ -125,9 +125,9 @@ materialized_view_spend_daily as (
         sum(metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'MATERIALIZED_VIEW'
@@ -142,9 +142,9 @@ snowpipe_spend_daily as (
         sum(metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'PIPE'
@@ -159,9 +159,9 @@ query_acceleration_spend_daily as (
         sum(metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'QUERY_ACCELERATION'
@@ -176,9 +176,9 @@ replication_spend_daily as (
         sum(metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'REPLICATION'
@@ -193,9 +193,9 @@ search_optimization_spend_daily as (
         sum(metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
     left join snowflake.account_usage.metering_history on
-        dates.date = metering_history.start_time::date
+        dates.date = convert_timezone('UTC', metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
-        metering_history.start_time::date = daily_rates.date
+        convert_timezone('UTC', metering_history.start_time)::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
     where metering_history.service_type = 'SEARCH_OPTIMIZATION'
