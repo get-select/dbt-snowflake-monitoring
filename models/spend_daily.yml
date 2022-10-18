@@ -6,26 +6,13 @@ models:
     columns:
     - name: date
       description: Date of spend.
-    - name: usage_type
-      description: Top level spend category. One of storage, warehouse compute, serverless or cloud services.
-    - name: usage_type_subcategory_1
-      description: |
-        Usage type subcategory.  
-        ```
-        | usage_type        | usage_type_subcategory_1 |  
-        |-------------------|--------------------------|  
-        | storage           | table and time travel    |  
-        | ..                | stage                    |  
-        | ..                | failsafe                 |  
-        | warehouse compute | <warehouse names>        |  
-        | cloud services    | <warehouse names>        |  
-        | ..                | cloud services only      |  
-        | serverless        | automatic clustering     |  
-        | ..                | materialized views       |  
-        | ..                | snowpipe                 |  
-        | ..                | query acceleration       |  
-        | ..                | replication              |  
-        | ..                | search optimization      |
-        ```
+    - name: service
+      description: Top level spend category per Snowflake invoice.
+    - name: storage_type
+      description: Subcategories where service = "Storage".
+    - name: warehouse_name
+      description: Subcategories where service = "Compute" or "Cloud Services".
+    - name: database_name
+      description: Subcategories where service = "Storage" and storage_type = "Table and Time Travel" or "Failsafe".
     - name: spend
-      description: Spend associated with the usage type in the account's currency.
+      description: Spend in the account's currency.
