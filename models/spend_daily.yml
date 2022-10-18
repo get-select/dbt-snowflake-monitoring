@@ -2,10 +2,10 @@ version: 2
 
 models:
   - name: spend_daily
-    description: An enriched version of the query_history model. Contains 1 row per query (query_id).
+    description: Table of daily spend broken down by usage type.
     columns:
-    - name: usage_date
-      description: Primary key. Date of spend.
+    - name: date
+      description: Date of spend.
     - name: usage_type
       description: Top level spend category. One of storage, warehouse compute, serverless or cloud services.
     - name: usage_type_subcategory_1
@@ -27,5 +27,5 @@ models:
         | ..                | replication              |  
         | ..                | search optimization      |
         ```
-    - name: spend_usd
-      description: Spend in USD associated with the usage type.
+    - name: spend
+      description: Spend associated with the usage type in the account's currency.

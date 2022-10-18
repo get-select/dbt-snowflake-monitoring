@@ -1,19 +1,19 @@
 {{ config(materialized='table') }}
 
-with dates as (
+with date_spine as (
 {{ dbt_utils.date_spine(
         datepart="day",
-        start_date="cast('2019-01-01' as date)",
-        end_date="cast('2025-01-01' as date)"
+        start_date="'2019-01-01'::date",
+        end_date="current_date"
     )
-    }}
+}}
 ),
 
-dates_with_days_in_month as (
+dates as (
     select
         date_day as date,
         day(last_day(date_day)) as days_in_month
-    from dates
+    from date_spine
 ),
 
 storage_terabytes_daily as (
@@ -35,7 +35,7 @@ storage_terabytes_daily as (
         usage_date,
         'storage' as usage_type,
         'failsafe' as usage_type_subcategory_1,
-        failsafe_bytes / power(1024, 4) as storage_terabyte
+        failsafe_bytes / power(1024, 4) as storage_terabytes
     from snowflake.account_usage.storage_usage
 )
 
@@ -44,9 +44,9 @@ storage_terabytes_daily as (
         storage_terabytes_daily.usage_date,
         storage_terabytes_daily.usage_type,
         storage_terabytes_daily.usage_type_subcategory_1,
-        coalesce(storage_terabytes_daily.storage_terabytes / dates_with_days_in_month.days_in_month * daily_rates.effective_rate, 0) as spend_usd
+        coalesce(storage_terabytes_daily.storage_terabytes / dates.days_in_month * daily_rates.effective_rate, 0) as spend
     from storage_terabytes_daily
-    left join dates_with_days_in_month on storage_terabytes_daily.usage_date = dates_with_days_in_month.date
+    left join dates on storage_terabytes_daily.usage_date = dates.date
     left join {{ ref('daily_rates') }} on
         storage_terabytes_daily.usage_date = daily_rates.date
         and daily_rates.usage_type = 'storage'
@@ -54,11 +54,13 @@ storage_terabytes_daily as (
 
 compute_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'warehouse compute' as usage_type,
         metering_history.name as usage_type_subcategory_1,
-        sum(metering_history.credits_used_compute * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used_compute * daily_rates.effective_rate) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'compute'
@@ -67,13 +69,29 @@ compute_spend_daily as (
     group by 1, 2, 3
 ),
 
+cloud_services_multiplier as (
+    select
+        dates.date,
+        sum(metering_daily_history.credits_adjustment_cloud_services) as sum_credits_adjustment_cloud_services,
+        sum(metering_daily_history.credits_used_cloud_services) as sum_credits_used_cloud_services,
+        (sum_credits_used_cloud_services + sum_credits_adjustment_cloud_services) / sum_credits_used_cloud_services as cloud_services_multiplier
+    from dates
+    left join snowflake.account_usage.metering_daily_history on
+        dates.date = metering_daily_history.usage_date
+    group by 1
+),
+
 cloud_services_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'cloud services' as usage_type,
         case when metering_history.name = 'CLOUD_SERVICES_ONLY' then 'cloud services only' else metering_history.name end as usage_type_subcategory_1,
-        sum(metering_history.credits_used_cloud_services * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used_cloud_services * daily_rates.effective_rate * cloud_services_multiplier.cloud_services_multiplier) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
+    left join cloud_services_multiplier on
+        dates.date = cloud_services_multiplier.date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -84,11 +102,13 @@ cloud_services_spend_daily as (
 
 automatic_clustering_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'serverless' as usage_type,
         'automatic clustering' as usage_type_subcategory_1,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -99,11 +119,13 @@ automatic_clustering_spend_daily as (
 
 materialized_view_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'serverless' as usage_type,
         'materialized views' as usage_type_subcategory_1,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -114,11 +136,13 @@ materialized_view_spend_daily as (
 
 snowpipe_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'serverless' as usage_type,
         'snowpipe' as usage_type_subcategory_1,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -129,11 +153,13 @@ snowpipe_spend_daily as (
 
 query_acceleration_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'serverless' as usage_type,
         'query acceleration' as usage_type_subcategory_1,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -144,11 +170,13 @@ query_acceleration_spend_daily as (
 
 replication_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'serverless' as usage_type,
         'replication' as usage_type_subcategory_1,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -159,11 +187,13 @@ replication_spend_daily as (
 
 search_optimization_spend_daily as (
     select
-        metering_history.start_time::date as usage_date,
+        dates.date,
         'serverless' as usage_type,
         'search optimization' as usage_type_subcategory_1,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend_usd
-    from snowflake.account_usage.metering_history
+        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+    from dates
+    left join snowflake.account_usage.metering_history on
+        dates.date = metering_history.start_time::date
     left join {{ ref('daily_rates') }} on
         metering_history.start_time::date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -189,5 +219,3 @@ union all
 select * from replication_spend_daily
 union all
 select * from search_optimization_spend_daily
-union all
-select * from storage_spend_daily
