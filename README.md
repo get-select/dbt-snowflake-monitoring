@@ -1,6 +1,6 @@
-# dbt_snowflake_monitoring
+# dbt-snowflake-monitoring
 
-A dbt package to for monitoring Snowflake performance and costs.
+A dbt package to help you monitor Snowflake performance and costs. [See the dbt docs site here](https://get-select.github.io/dbt-snowflake-monitoring/#!/overview).
 
 ## Installation
 
