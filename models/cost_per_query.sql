@@ -17,7 +17,7 @@ that ended before 2022-10-10 16:00:00. Otherwise we won't accurately calculate t
 */
 stop_thresholds as (
     select max(end_time) as latest_ts
-    from {{ ref('warehouse_metering_history') }}
+    from {{ ref('stg_warehouse_metering_history') }}
 
     union all
 
@@ -47,7 +47,7 @@ filtered_queries as (
         ) as execution_start_time,
         start_time,
         end_time
-    from {{ ref('query_history') }}
+    from {{ ref('stg_query_history') }}
     where end_time <= (select latest_ts from stop_threshold)
 ),
 
@@ -91,7 +91,7 @@ credits_billed_hourly as (
         warehouse_id,
         credits_used_compute,
         credits_used_cloud_services
-    from {{ ref('warehouse_metering_history') }}
+    from {{ ref('stg_warehouse_metering_history') }}
 ),
 
 query_cost as (

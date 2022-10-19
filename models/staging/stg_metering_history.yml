@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: stg_metering_history
+    description: See https://docs.snowflake.com/en/sql-reference/account-usage/metering_history.html
+    columns:
+      - name: name
+        description: Name of the service type.
+      - name: credits_used_compute
+        description: Number of credits used for virtual warehouses in the hour.
+      - name: start_time
+        description: The date and beginning of the hour (in the UTC time zone) in which the usage took place.
+      - name: service_type
+        description: The type of service, which can be one of AUTO_CLUSTERING, MATERIALIZED_VIEW, PIPE, QUERY_ACCELERATION, REPLICATION, SEARCH_OPTIMIZATION, WAREHOUSE_METERING, or WAREHOUSE_METERING_READER.
+      - name: credits_used_cloud_services
+        description: Number of credits used for cloud services in the hour.
+      - name: credits_used
+        description: Total number of credits used for the account in the hour. This is a sum of CREDITS_USED_COMPUTE and CREDITS_USED_CLOUD_SERVICES. This value does not take into account the adjustment for cloud services, and may therefore be greater than your actual credit consumption.

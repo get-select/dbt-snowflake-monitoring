@@ -1,12 +1,39 @@
-{{ config(materialized='table') }}
+{{ config(materialized='incremental') }}
 
 with date_spine as (
-{{ dbt_utils.date_spine(
-        datepart="day",
-        start_date="'2019-01-01'::date",
-        end_date="current_date"
-    )
-}}
+
+    {# In a full refresh, this logic sets the start_date of the date spine to the first date in stg_metering_history #}
+    {# In incremental mode, this logic sets the start_date of the date spine to be the day after the max current date in this model #}
+    {# The end_date is always set to today's date (the date_spine function excludes this date) #}
+
+    {% if is_incremental() %}
+    {% set results = run_query("select dateadd(day, 1, max(date)) from " ~ this) %}
+    {% if execute %}
+    {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
+    {% endif %}
+    {% else %}
+    {% set results = run_query("select min(convert_timezone('UTC', start_time)::date) from " ~ ref('stg_metering_history')) %}
+    {% if execute %}
+        {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
+    {% endif %}
+{% endif %}
+
+    {% set results = run_query("select " ~ start_date ~ "::date < convert_timezone('UTC', current_timestamp)::date") %}
+    {% if execute %}
+    {% set should_run = results.columns[0][0] %}
+    {% endif %}
+
+    {% if should_run %}
+    {{ dbt_utils.date_spine(
+            datepart="day",
+            start_date=start_date ~ "::date",
+            end_date="convert_timezone('UTC', current_timestamp)::date"
+        )
+    }}
+{% else %}
+    select '2000-01-01'::date as date_day
+    where false
+    {% endif %}
 ),
 
 dates as (
@@ -18,42 +45,42 @@ dates as (
 
 storage_terabytes_daily as (
     select
-        usage_date,
+        date,
         'Table and Time Travel' as storage_type,
         database_name,
         sum(average_database_bytes) / power(1024, 4) as storage_terabytes
-    from snowflake.account_usage.database_storage_usage_history
+    from {{ ref('stg_database_storage_usage_history') }}
     group by 1, 2, 3
     union all
     select
-        usage_date,
+        date,
         'Failsafe' as storage_type,
         database_name,
         sum(average_failsafe_bytes) / power(1024, 4) as storage_terabytes
-    from snowflake.account_usage.database_storage_usage_history
+    from {{ ref('stg_database_storage_usage_history') }}
     group by 1, 2, 3
     union all
     select
-        usage_date,
+        date,
         'Stage' as storage_type,
         null as database_name,
         sum(average_stage_bytes) / power(1024, 4) as storage_terabytes
-    from snowflake.account_usage.stage_storage_usage_history
+    from {{ ref('stg_stage_storage_usage_history') }}
     group by 1, 2, 3
 )
 
 , storage_spend_daily as (
     select
-        storage_terabytes_daily.usage_date,
+        storage_terabytes_daily.date,
         'Storage' as service,
         storage_terabytes_daily.storage_type,
         null as warehouse_name,
         storage_terabytes_daily.database_name,
         coalesce(storage_terabytes_daily.storage_terabytes / dates.days_in_month * daily_rates.effective_rate, 0) as spend
     from dates
-    left join storage_terabytes_daily on dates.date = storage_terabytes_daily.usage_date
+    left join storage_terabytes_daily on dates.date = storage_terabytes_daily.date
     left join {{ ref('daily_rates') }} on
-        storage_terabytes_daily.usage_date = daily_rates.date
+        storage_terabytes_daily.date = daily_rates.date
         and daily_rates.usage_type = 'storage'
 ),
 
@@ -62,17 +89,17 @@ compute_spend_daily as (
         dates.date,
         'Compute' as service,
         null as storage_type,
-        metering_history.name as warehouse_name,
+        stg_metering_history.name as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used_compute * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used_compute * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'compute'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'WAREHOUSE_METERING'
+    where stg_metering_history.service_type = 'WAREHOUSE_METERING' and stg_metering_history.name != 'CLOUD_SERVICES_ONLY'
     group by 1, 2, 3, 4
 ),
 
@@ -83,10 +110,10 @@ adj_for_incl_cloud_services_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        sum(metering_daily_history.credits_adjustment_cloud_services * daily_rates.effective_rate) as spend
+        coalesce(sum(stg_metering_daily_history.credits_adjustment_cloud_services * daily_rates.effective_rate), 0) as spend
     from dates
-    left join snowflake.account_usage.metering_daily_history on
-        dates.date = metering_daily_history.usage_date
+    left join {{ ref('stg_metering_daily_history') }} on
+        dates.date = stg_metering_daily_history.date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
@@ -99,17 +126,17 @@ cloud_services_spend_daily as (
         dates.date,
         'Cloud Services' as service,
         null as storage_type,
-        case when metering_history.name = 'CLOUD_SERVICES_ONLY' then 'Cloud Services Only' else metering_history.name end as warehouse_name,
+        case when stg_metering_history.name = 'CLOUD_SERVICES_ONLY' then 'Cloud Services Only' else stg_metering_history.name end as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used_cloud_services * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used_cloud_services * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'WAREHOUSE_METERING'
+    where stg_metering_history.service_type = 'WAREHOUSE_METERING'
     group by 1, 2, 3, 4
 ),
 
@@ -120,15 +147,15 @@ automatic_clustering_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'AUTO_CLUSTERING'
+    where stg_metering_history.service_type = 'AUTO_CLUSTERING'
     group by 1, 2, 3, 4
 ),
 
@@ -139,15 +166,15 @@ materialized_view_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'MATERIALIZED_VIEW'
+    where stg_metering_history.service_type = 'MATERIALIZED_VIEW'
     group by 1, 2, 3, 4
 ),
 
@@ -158,15 +185,15 @@ snowpipe_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'PIPE'
+    where stg_metering_history.service_type = 'PIPE'
     group by 1, 2, 3, 4
 ),
 
@@ -177,15 +204,15 @@ query_acceleration_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'QUERY_ACCELERATION'
+    where stg_metering_history.service_type = 'QUERY_ACCELERATION'
     group by 1, 2, 3, 4
 ),
 
@@ -196,15 +223,15 @@ replication_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'REPLICATION'
+    where stg_metering_history.service_type = 'REPLICATION'
     group by 1, 2, 3, 4
 ),
 
@@ -215,15 +242,15 @@ search_optimization_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        sum(metering_history.credits_used * daily_rates.effective_rate) as spend
+        sum(stg_metering_history.credits_used * daily_rates.effective_rate) as spend
     from dates
-    left join snowflake.account_usage.metering_history on
-        dates.date = convert_timezone('UTC', metering_history.start_time)::date
+    left join {{ ref('stg_metering_history') }} on
+        dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
         and daily_rates.usage_type = 'cloud services'
         and daily_rates.service_type = 'COMPUTE'
-    where metering_history.service_type = 'SEARCH_OPTIMIZATION'
+    where stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
     group by 1, 2, 3, 4
 )
 

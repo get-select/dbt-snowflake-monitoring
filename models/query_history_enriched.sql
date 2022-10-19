@@ -13,7 +13,7 @@ query_history as (
         regexp_substr(query_text, '/\\*\\s({"app":\\s"dbt".*})\\s\\*/', 1, 1, 'ie') as _dbt_json_meta,
         try_parse_json(_dbt_json_meta) as dbt_metadata
 
-    from {{ ref('query_history') }}
+    from {{ ref('stg_query_history') }}
 
     {% if is_incremental() %}
         where end_time > (select max(end_time) from {{ this }})

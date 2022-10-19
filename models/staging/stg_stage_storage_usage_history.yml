@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_stage_storage_usage_history
+    description: See https://docs.snowflake.com/en/sql-reference/account-usage/stage_storage_usage_history.html
+    columns:
+      - name: date
+        description: Date of this storage usage record.
+      - name: average_stage_bytes
+        description: Number of bytes of stage storage used.

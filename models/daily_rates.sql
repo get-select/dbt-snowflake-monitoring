@@ -32,7 +32,7 @@ rate_sheet_daily as (
         currency,
         effective_rate,
         service_type
-    from {{ ref('rate_sheet_daily') }}
+    from {{ ref('stg_rate_sheet_daily') }}
     where
         account_locator = '{{ current_account }}'
 ),

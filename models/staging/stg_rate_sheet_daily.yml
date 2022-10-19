@@ -1,8 +1,8 @@
 version: 2
 
 models:
-  - name: rate_sheet_daily
-    description: A  materialized copy of the snowflake.organization.rate_sheet_daily view. It can be used to get the effective rates used for calculating usage in the organization currency based on credits used for all Snowflake accounts in your organization. It contains 1 row per day per rate in Snowflake account (some days can have more than 1 rate for a given usage_type, usually when the contract is updated).
+  - name: stg_rate_sheet_daily
+    description: A materialized copy of the snowflake.organization.rate_sheet_daily view. It can be used to get the effective rates used for calculating usage in the organization currency based on credits used for all Snowflake accounts in your organization. It contains 1 row per day per rate in Snowflake account (some days can have more than 1 rate for a given usage_type, usually when the contract is updated).
     columns:
       - name: date
         description: Date (in the UTC time zone) for the effective price.

@@ -1,11 +1,11 @@
 version: 2
 
 models:
-  - name: spend_daily
-    description: Table of daily spend broken down by usage type.
+  - name: daily_spend
+    description: Table of daily spend broken down by services as listed on the invoice, with additional granularity.
     columns:
     - name: date
-      description: Date of spend.
+      description: Date of spend in UTC timezone.
     - name: service
       description: Top level spend category per Snowflake invoice.
     - name: storage_type
