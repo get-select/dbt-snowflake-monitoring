@@ -7,7 +7,7 @@ models:
     - name: date
       description: Date of spend in UTC timezone.
     - name: service
-      description: Top level spend category per Snowflake invoice.
+      description: Top level spend category per Snowflake invoice. One of Storage, Compute, Cloud Services, Adj For Incl Cloud Services, Automatic Clustering, Materialized Views, Snowpipe, Query Acceleration, Replication, or Search Optimization.
     - name: storage_type
       description: Subcategories where service = "Storage".
     - name: warehouse_name

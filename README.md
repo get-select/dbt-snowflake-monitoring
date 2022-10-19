@@ -31,77 +31,9 @@ models:
 
 ## Example Usage
 
-```sql
-use database your_default_dbt_database
-use schema your_default_dbt_schema
-```
+### Sample Queries
 
-**Find the top 10 most expensive queries in your Snowflake account**
-
-```sql
-with
-max_date as (
-    select max(date(end_time)) as date
-    from query_history_enriched
-)
-select
-    md5(query_history_enriched.query_text_no_comments) as query_signature,
-    any_value(query_history_enriched.query_text) as query_text,
-    sum(query_history_enriched.query_cost) as total_cost_last_30d,
-    total_cost_last_30d*12 as estimated_annual_cost,
-    get(array_agg(warehouse_name) within group (order by start_time desc), 0)::string as latest_warehouse_name,
-    get(array_agg(warehouse_size) within group (order by start_time desc), 0)::string as latest_warehouse_size,
-    get(array_agg(query_id) within group (order by start_time desc), 0)::string as latest_query_id,
-    avg(execution_time_s) as avg_execution_time_s,
-    count(*) as num_executions
-from query_history_enriched
-cross join max_date
-where true
-    and query_history_enriched.start_time >= dateadd('day', -30, max_date.date)
-    and query_history_enriched.start_time < max_date.date -- don't include partial day of data
-group by 1
-order by total_cost_last_30d desc
-limit 10
-;
-```
-
-**Find the top 10 most expensive dbt models in your Snowflake account**
-
-```sql
-with
-max_date as (
-    select max(date(end_time)) as date
-    from query_history_enriched
-)
-select
-    dbt_metadata['node_id']::string as dbt_node_id,
-    sum(query_history_enriched.query_cost) as total_cost_last_30d,
-    total_cost_last_30d*12 as estimated_annual_cost
-from query_history_enriched
-cross join max_date
-where true
-    and query_history_enriched.start_time >= dateadd('day', -30, max_date.date)
-    and query_history_enriched.start_time < max_date.date -- don't include partial day of data
-    and dbt_metadata is not null
-group by 1
-order by total_cost_last_30d desc
-limit 10
-;
-```
-
-**Trend the cost of your dbt model over time**
-
-```sql
-select
-    date(start_time) as date,
-    sum(query_cost) as cost
-from query_history_enriched
-where true
-    and dbt_metadata['node_id']::string='<your dbt model node id>'
-group by 1
-order by 1 desc
-;
-```
+See [sample_queries.md](/documentation/sample_queries.md)
 
 ## Query cost caveats
 
