@@ -4,14 +4,16 @@ sources:
   - name: snowflake_account_usage
     database: snowflake
     schema: account_usage
-
     tables:
+      - name: stage_storage_usage_history
+      - name: database_storage_usage_history
       - name: query_history
       - name: warehouse_metering_history
+      - name: metering_history
+      - name: metering_daily_history
 
   - name: snowflake_organization_usage
     database: snowflake
     schema: organization_usage
-
     tables:
       - name: rate_sheet_daily

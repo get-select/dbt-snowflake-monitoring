@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: query_history
+  - name: stg_query_history
     description: An incrementally materialized copy of the snowflake.account_usage.query_history view. It can be used to query Snowflake query history by various dimensions (time range, session, user, warehouse, etc.) within the last 365 days (1 year). It contains 1 row per query (query_id).
     columns:
       - name: query_id

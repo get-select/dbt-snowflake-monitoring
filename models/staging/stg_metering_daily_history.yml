@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_metering_daily_history
+    description: See https://docs.snowflake.com/en/sql-reference/account-usage/metering_daily_history.html
+    columns:
+      - name: date
+        description: The date (in the UTC time zone) in which the usage took place.
+      - name: credits_adjustment_cloud_services
+        description: Number of credits adjusted for included cloud services. This is a negative value (e.g. -9).

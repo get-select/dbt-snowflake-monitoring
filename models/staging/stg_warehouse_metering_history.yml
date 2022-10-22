@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: warehouse_metering_history
+  - name: stg_warehouse_metering_history
     description: An incrementally materialized copy of the snowflake.account_usage.warehouse_metering_history view. It can be used to return the hourly credit usage for a single warehouse (or all the warehouses in your account) within the last 365 days (1 year). It contains 1 row per hour per warehouse.
     columns:
       - name: start_time
