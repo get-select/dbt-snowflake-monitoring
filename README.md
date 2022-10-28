@@ -10,7 +10,7 @@ Ensure that the Snowflake role used by your dbt project has permission to read t
 grant imported privileges on database snowflake to role your_dbt_role_name;
 ```
 
-We are currently in the process of getting this package added to the dbt package hub. In the meantime, you can add it to your package by adding the following to your `packages.yml` file:
+Add the following to your `packages.yml` file:
 
 ```yaml
 packages:
