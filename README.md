@@ -15,7 +15,7 @@ We are currently in the process of getting this package added to the dbt package
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 1.0.0
+    version: 1.1.0
 ```
 
 In your dbt project, you can then turn it on/off with the `enabled` property:
