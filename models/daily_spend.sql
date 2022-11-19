@@ -7,9 +7,9 @@ with date_spine as (
     {# The end_date is always set to today's date (the date_spine function excludes this date) #}
 
     {% if is_incremental() %}
-    {% set results = run_query("select dateadd(day, 1, max(date)) from " ~ this) %}
+{% set results = run_query("select dateadd(day, 1, max(date)) from " ~ this) %}
     {% if execute %}
-    {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
+{% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
     {% endif %}
     {% else %}
     {% set results = run_query("select min(convert_timezone('UTC', start_time)::date) from " ~ ref('stg_metering_history')) %}
@@ -18,9 +18,9 @@ with date_spine as (
     {% endif %}
 {% endif %}
 
-    {% set results = run_query("select " ~ start_date ~ "::date < convert_timezone('UTC', current_timestamp)::date") %}
+{% set results = run_query("select " ~ start_date ~ "::date < convert_timezone('UTC', current_timestamp)::date") %}
     {% if execute %}
-    {% set should_run = results.columns[0][0] %}
+{% set should_run = results.columns[0][0] %}
     {% endif %}
 
     {% if should_run %}
@@ -31,8 +31,8 @@ with date_spine as (
         )
     }}
 {% else %}
-    select '2000-01-01'::date as date_day
-    where false
+        select '2000-01-01'::date as date_day
+        where false
     {% endif %}
 ),
 
@@ -81,7 +81,7 @@ storage_terabytes_daily as (
     left join storage_terabytes_daily on dates.date = storage_terabytes_daily.date
     left join {{ ref('daily_rates') }} on
         storage_terabytes_daily.date = daily_rates.date
-        and daily_rates.usage_type = 'storage'
+        and (daily_rates.usage_type = 'storage' or daily_rates.usage_type = 'overage-storage')
 ),
 
 compute_spend_daily as (
@@ -97,7 +97,7 @@ compute_spend_daily as (
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'compute'
+        and (daily_rates.usage_type = 'compute' or daily_rates.usage_type = 'overage-compute')
         and daily_rates.service_type = 'COMPUTE'
     where stg_metering_history.service_type = 'WAREHOUSE_METERING' and stg_metering_history.name != 'CLOUD_SERVICES_ONLY'
     group by 1, 2, 3, 4
@@ -116,7 +116,7 @@ adj_for_incl_cloud_services_daily as (
         dates.date = stg_metering_daily_history.date
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 ),
@@ -135,7 +135,7 @@ cloud_services_spend_daily as (
         and stg_metering_history.service_type = 'WAREHOUSE_METERING'
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 ),
@@ -154,7 +154,7 @@ automatic_clustering_spend_daily as (
         and stg_metering_history.service_type = 'AUTO_CLUSTERING'
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 ),
@@ -173,7 +173,7 @@ materialized_view_spend_daily as (
         and stg_metering_history.service_type = 'MATERIALIZED_VIEW'
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 ),
@@ -192,7 +192,7 @@ snowpipe_spend_daily as (
         and stg_metering_history.service_type = 'PIPE'
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 ),
@@ -211,7 +211,7 @@ query_acceleration_spend_daily as (
         and stg_metering_history.service_type = 'QUERY_ACCELERATION'
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 ),
@@ -230,7 +230,7 @@ replication_spend_daily as (
         and stg_metering_history.service_type = 'REPLICATION'
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 ),
@@ -249,7 +249,7 @@ search_optimization_spend_daily as (
         and stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
     left join {{ ref('daily_rates') }} on
         dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
+        and (daily_rates.usage_type = 'cloud services' or daily_rates.usage_type = 'overage-cloud services')
         and daily_rates.service_type = 'COMPUTE'
     group by 1, 2, 3, 4
 )
