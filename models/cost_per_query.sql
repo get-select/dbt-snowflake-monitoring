@@ -6,7 +6,7 @@ daily_rates as (
         date,
         effective_rate
     from {{ ref('daily_rates') }}
-    where usage_type = 'compute'
+    where (usage_type = 'compute' or usage_type = 'overage-compute')
 ),
 /*
 Calculate a "stop threshold", which tells us the latest timestamp we should process data up until.
@@ -41,8 +41,8 @@ filtered_queries as (
         timeadd(
             'millisecond',
             queued_overload_time + compilation_time
-            + queued_provisioning_time + queued_repair_time +
-            list_external_files_time,
+            + queued_provisioning_time + queued_repair_time
+            + list_external_files_time,
             start_time
         ) as execution_start_time,
         start_time,
