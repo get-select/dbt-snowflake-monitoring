@@ -4,7 +4,7 @@ with
 daily_rates as (
     select
         date,
-        effective_rate
+        max(effective_rate) as effective_rate
     from {{ ref('daily_rates') }}
     where usage_type in ('compute', 'overage-compute')
     group by date
