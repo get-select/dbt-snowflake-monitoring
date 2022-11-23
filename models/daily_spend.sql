@@ -76,12 +76,13 @@ storage_terabytes_daily as (
         storage_terabytes_daily.storage_type,
         null as warehouse_name,
         storage_terabytes_daily.database_name,
-        coalesce(storage_terabytes_daily.storage_terabytes / dates.days_in_month * daily_rates.effective_rate, 0) as spend
+        coalesce(sum(div0(storage_terabytes_daily.storage_terabytes, dates.days_in_month) * daily_rates.effective_rate), 0) as spend
     from dates
     left join storage_terabytes_daily on dates.date = storage_terabytes_daily.date
     left join {{ ref('daily_rates') }} on
         storage_terabytes_daily.date = daily_rates.date
         and (daily_rates.usage_type = 'storage' or daily_rates.usage_type = 'overage-storage')
+    group by 1, 2, 3, 4, 5
 ),
 
 compute_spend_daily as (
