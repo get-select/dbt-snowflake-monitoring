@@ -6,7 +6,8 @@ daily_rates as (
         date,
         effective_rate
     from {{ ref('daily_rates') }}
-    where (usage_type = 'compute' or usage_type = 'overage-compute')
+    where usage_type in ('compute', 'overage-compute')
+    group by date
 ),
 /*
 Calculate a "stop threshold", which tells us the latest timestamp we should process data up until.
