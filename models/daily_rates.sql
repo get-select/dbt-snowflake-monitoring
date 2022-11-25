@@ -1,11 +1,5 @@
 {{ config(materialized='table') }}
 
-{%- call statement('current_account', fetch_result=True) -%}
-      select current_account();
-{%- endcall -%}
-
-{%- set current_account = load_result('current_account')['data'][0][0] -%}
-
 /*
 snowflake.organization_usage.rate_sheet_daily isn't guaranteed to have 1 row per day per usage type.
 
@@ -34,7 +28,7 @@ rate_sheet_daily as (
         service_type
     from {{ ref('stg_rate_sheet_daily') }}
     where
-        account_locator = '{{ current_account }}'
+        account_locator = {{ var('DBT_CURRENT_ACCOUNT', 'current_account()') }}
 ),
 
 rates_date_range as (

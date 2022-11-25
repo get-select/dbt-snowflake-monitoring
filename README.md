@@ -76,11 +76,6 @@ dbt build
 
 and any other dbt command.
 
-To run the tests:
-```
-tox
-```
-
 ### SQLFluff
 
 We use SQLFluff to keep SQL style consistent. By installing `pre-commit` per the initial setup guide above, SQLFluff will run automatically when you make a commit locally. A GitHub action automatically tests pull requests and adds annotations where there are failures.

@@ -1,0 +1,11 @@
+MONTH,SERVICE,SPEND
+2022-04-01,Storage,1.136266305
+2022-04-01,Compute,912.772222176
+2022-04-01,Adj For Incl Cloud Services,-74.921528302
+2022-04-01,Cloud Services,74.921528302
+2022-04-01,Materialized Views,0
+2022-04-01,Query Acceleration,0
+2022-04-01,Replication,0
+2022-04-01,Search Optimization,0
+2022-04-01,Automatic Clustering,0.051113362
+2022-04-01,Snowpipe,0

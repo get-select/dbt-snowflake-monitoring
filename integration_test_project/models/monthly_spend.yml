@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: monthly_spend
+    tests:
+      - advanced_equality:
+          compare_model: ref('monthly_spend_fixture')
+          round_columns: ['spend']
