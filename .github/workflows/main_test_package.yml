@@ -29,6 +29,9 @@ jobs:
       - name: Install tox
         run: python3 -m pip install tox
 
+      - name: Run Snowflake Integration Tests
+        run: tox -e integration_snowflake
+
       - name: Run Snowflake Tests
         run: tox -e integration_snowflake
 
