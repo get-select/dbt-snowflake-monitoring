@@ -67,21 +67,42 @@ storage_terabytes_daily as (
         sum(average_stage_bytes) / power(1024, 4) as storage_terabytes
     from {{ ref('stg_stage_storage_usage_history') }}
     group by 1, 2, 3
-)
+),
 
-, storage_spend_daily as (
+storage_rates as (
+    select
+        date,
+        max(effective_rate) as effective_rate
+    from {{ ref('daily_rates') }}
+    where
+        service_type = 'STORAGE'
+        and usage_type in ('storage', 'overage-storage') {# TODO work out how to account for these two types in the event they both occur on a day #}
+    group by 1
+),
+
+storage_spend_daily as (
     select
         storage_terabytes_daily.date,
         'Storage' as service,
         storage_terabytes_daily.storage_type,
         null as warehouse_name,
         storage_terabytes_daily.database_name,
-        coalesce(storage_terabytes_daily.storage_terabytes / dates.days_in_month * daily_rates.effective_rate, 0) as spend
+        coalesce(sum(div0(storage_terabytes_daily.storage_terabytes, dates.days_in_month) * storage_rates.effective_rate), 0) as spend
     from dates
     left join storage_terabytes_daily on dates.date = storage_terabytes_daily.date
-    left join {{ ref('daily_rates') }} on
-        storage_terabytes_daily.date = daily_rates.date
-        and daily_rates.usage_type = 'storage'
+    left join storage_rates on storage_terabytes_daily.date = storage_rates.date
+    group by 1, 2, 3, 4, 5
+),
+
+compute_rates as (
+    select
+        date,
+        max(effective_rate) as effective_rate
+    from {{ ref('daily_rates') }}
+    where
+        service_type = 'COMPUTE'
+        and usage_type in ('compute', 'overage-compute') {# TODO work out how to account for these two types in the event they both occur on a day #}
+    group by 1
 ),
 
 compute_spend_daily as (
@@ -91,16 +112,24 @@ compute_spend_daily as (
         null as storage_type,
         stg_metering_history.name as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used_compute * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used_compute * compute_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'compute'
-        and daily_rates.service_type = 'COMPUTE'
+    left join compute_rates on dates.date = compute_rates.date
     where stg_metering_history.service_type = 'WAREHOUSE_METERING' and stg_metering_history.name != 'CLOUD_SERVICES_ONLY'
     group by 1, 2, 3, 4
+),
+
+cloud_services_rates as (
+    select
+        date,
+        max(effective_rate) as effective_rate
+    from {{ ref('daily_rates') }}
+    where
+        service_type = 'COMPUTE'
+        and usage_type in ('cloud services', 'overage-cloud services') {# TODO work out how to account for these two types in the event they both occur on a day #}
+    group by 1
 ),
 
 adj_for_incl_cloud_services_daily as (
@@ -110,14 +139,12 @@ adj_for_incl_cloud_services_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_daily_history.credits_adjustment_cloud_services * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_daily_history.credits_adjustment_cloud_services * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_daily_history') }} on
         dates.date = stg_metering_daily_history.date
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 ),
 
@@ -128,15 +155,13 @@ cloud_services_spend_daily as (
         null as storage_type,
         case when stg_metering_history.name = 'CLOUD_SERVICES_ONLY' then 'Cloud Services Only' else stg_metering_history.name end as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used_cloud_services * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used_cloud_services * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'WAREHOUSE_METERING'
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 ),
 
@@ -147,15 +172,13 @@ automatic_clustering_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'AUTO_CLUSTERING'
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 ),
 
@@ -166,15 +189,13 @@ materialized_view_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'MATERIALIZED_VIEW'
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 ),
 
@@ -185,15 +206,13 @@ snowpipe_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'PIPE'
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 ),
 
@@ -204,15 +223,13 @@ query_acceleration_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'QUERY_ACCELERATION'
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 ),
 
@@ -223,15 +240,13 @@ replication_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'REPLICATION'
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 ),
 
@@ -242,15 +257,13 @@ search_optimization_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * cloud_services_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
-    left join {{ ref('daily_rates') }} on
-        dates.date = daily_rates.date
-        and daily_rates.usage_type = 'cloud services'
-        and daily_rates.service_type = 'COMPUTE'
+    left join cloud_services_rates on
+        dates.date = cloud_services_rates.date
     group by 1, 2, 3, 4
 )
 

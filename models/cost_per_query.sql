@@ -4,9 +4,10 @@ with
 daily_rates as (
     select
         date,
-        effective_rate
+        max(effective_rate) as effective_rate
     from {{ ref('daily_rates') }}
-    where usage_type = 'compute'
+    where usage_type in ('compute', 'overage-compute')
+    group by date
 ),
 /*
 Calculate a "stop threshold", which tells us the latest timestamp we should process data up until.
