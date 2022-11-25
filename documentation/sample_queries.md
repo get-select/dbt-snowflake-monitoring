@@ -72,6 +72,10 @@ group by 1, 2, 3, 4
 ```
 
 ## Query Cost Attribution
+Snowflake bills for the number of seconds that a warehouse is running, not by query. Query cost attribution helps understand how queries are contributing to warehouse active time. Removing a query will not reduce the bill by the exact amount attributed to the query if other queries are running at the same time and causing the warehouse to stay active.
+
+Cloud services credits are only billed if they exceed 10% of the compute credit consumption on a given day. The cost per query model accounts for this, but current day values will change up until the end of the day.
+
 
 ### Top 10 costliest queries in the last 30 days
 

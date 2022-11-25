@@ -2,9 +2,9 @@
 
 A dbt package to help you monitor Snowflake performance and costs. Documentation for the models can be found [here](https://get-select.github.io/dbt-snowflake-monitoring/#!/overview).
 
-## Installation
+## Quickstart
 
-Ensure that the Snowflake role used by your dbt project has permission to read the required `snowflake.account_usage` and `snowflake.organization` views. If it does not, you can run the following SQL to grant the required permissions:
+Grant dbt's role access to the `snowflake` database:
 
 ```sql
 grant imported privileges on database snowflake to role your_dbt_role_name;
@@ -18,15 +18,12 @@ packages:
     version: 1.1.0
 ```
 
-In your dbt project, you can then turn it on/off with the `enabled` property:
+To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, add the following to `dbt_project.yml`:
 
 ```yaml
-models:
-
-  ...
-
-  dbt_snowflake_monitoring:
-    enabled: true
+query-comment:
+  comment: '{{ dbt_snowflake_monitoring.get_query_comment(node) }}'
+  append: true # Snowflake removes prefixed comments.
 ```
 
 ## Example Usage
@@ -34,12 +31,6 @@ models:
 ### Sample Queries
 
 See [sample_queries.md](/documentation/sample_queries.md)
-
-## Query cost caveats
-
-It's important to note that removing a particular query does not guarantee your Snowflake bill to decrease by the cost associated with that query. Snowflake bills based on the number of seconds your warehouse is running. If other queries are running at the same time as the query you removed, you will still be billed for that time.
-
-For the cloud services credits associated with your queries, you are only billed for them if they exceed 10% of your compute credit consumption on a given day. The cost per query model correctly handles this nuance by performing this applicability check prior to adding any cloud service costs to the queries. However, for queries that ran on the current date, this calculation may be innacurate. For example, say the cost per query model runs at 10AM today. For all the queries that occured before 10AM today, it finds that the total cloud service credits consumed was 15, and the total compute credits consumed was 100. Since this is greater than 10%, 5 cloud services credits will be allocated to the queries from today. It's possible that this fraction shifts as more queries run, and at the end of the day we have 90 cloud service credits and 1000 compute credits. If we re-run the model again after the day is completed, the queries were no longer have any cloud service costs associated with them. In the grand scheme of things, this won't make any significant difference in your analysis, but it is worth calling out.
 
 ## Contributing
 

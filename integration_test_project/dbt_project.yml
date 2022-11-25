@@ -12,6 +12,10 @@ clean-targets:
   - target
   - dbt_packages
 
+query-comment:
+  comment: '{{ dbt_snowflake_monitoring.get_query_comment(node) }}'
+  append: true # Snowflake removes prefixed comments.
+
 vars: 
   DBT_SNOWFLAKE_MONITORING_SNOWFLAKE_ACCOUNT_USAGE_DATABASE: DBT_CI
   DBT_SNOWFLAKE_MONITORING_SNOWFLAKE_ACCOUNT_USAGE_SCHEMA: MOCK_DATA
