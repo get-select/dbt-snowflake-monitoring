@@ -160,7 +160,7 @@ select
     all_queries.end_time,
     all_queries.execution_start_time,
     all_queries.compute_cost,
-    (all_queries.credits_used_cloud_services / credits_billed_daily.daily_credits_used_cloud_services * credits_billed_daily.daily_billable_cloud_services) * daily_rates.effective_rate as cloud_services_cost,
+    (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * daily_rates.effective_rate as cloud_services_cost,
     all_queries.compute_cost + cloud_services_cost as query_cost
 from all_queries
 inner join credits_billed_daily
