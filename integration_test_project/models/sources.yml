@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: snowflake_account_usage
+    overrides: dbt_snowflake_monitoring
+    database: dbt_ci
+    schema: mock_data
+
+  - name: snowflake_organization_usage
+    overrides: dbt_snowflake_monitoring
+    database: dbt_ci
+    schema: mock_data
