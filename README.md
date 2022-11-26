@@ -15,7 +15,7 @@ Add the following to your `packages.yml` file:
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 1.1.0
+    version: 1.2.0
 ```
 
 To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, add the following to `dbt_project.yml`:
@@ -57,6 +57,13 @@ pre-commit install
 ```
 dbt init
 ```
+
+### Adding a CHANGELOG Entry
+We use changie to generate CHANGELOG entries. Note: Do not edit the CHANGELOG.md directly. Your modifications will be lost.
+
+Follow the steps to [install changie](https://changie.dev/guide/installation/) for your system.
+
+Once changie is installed and your PR is created, simply run changie new and changie will walk you through the process of creating a changelog entry. Commit the file that's created and your changelog entry is complete!
 
 ### Developing the package
 
