@@ -2,8 +2,8 @@ version: 2
 
 sources:
   - name: snowflake_account_usage
-    database: "{{ var('DBT_SNOWFLAKE_MONITORING_SNOWFLAKE_ACCOUNT_USAGE_DATABASE', 'snowflake') }}"
-    schema: "{{ var('DBT_SNOWFLAKE_MONITORING_SNOWFLAKE_ACCOUNT_USAGE_SCHEMA', 'account_usage') }}"
+    database: snowflake
+    schema: account_usage
     tables:
       - name: stage_storage_usage_history
       - name: database_storage_usage_history
@@ -13,8 +13,8 @@ sources:
       - name: metering_daily_history
 
   - name: snowflake_organization_usage
-    database: "{{ var('DBT_SNOWFLAKE_MONITORING_SNOWFLAKE_ORGANIZATION_USAGE_DATABASE', 'snowflake') }}"
-    schema: "{{ var('DBT_SNOWFLAKE_MONITORING_SNOWFLAKE_ORGANIZATION_USAGE_SCHEMA', 'organization_usage') }}"
+    database: snowflake
+    schema: organization_usage
     tables:
       - name: rate_sheet_daily
 
