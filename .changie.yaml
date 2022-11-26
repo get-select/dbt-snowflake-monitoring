@@ -1,0 +1,63 @@
+# Mainly from https://github.com/dbt-labs/dbt-core/blob/main/.changie.yaml
+
+changesDir: .changes
+unreleasedDir: unreleased
+headerPath: header.tpl.md
+changelogPath: CHANGELOG.md
+versionExt: md
+versionFormat: '## dbt-snowflake-monitoring {{.Version}} - {{.Time.Format "January 02, 2006"}}'
+kindFormat: '### {{.Kind}}'
+changeFormat: '- {{.Body}} ([#{{.Custom.PR}}](https://github.com/get-select/dbt-snowflake-monitoring/pull/{{.Custom.PR}}))'
+kinds:
+- label: Breaking Changes
+- label: Features
+- label: Fixes
+- label: Docs
+newlines:
+  afterChangelogHeader: 1
+  afterKind: 1
+  afterChangelogVersion: 1
+  beforeKind: 1
+  endOfVersion: 1
+custom:
+- key: Author
+  label: GitHub Username(s) (separated by a single space if multiple)
+  type: string
+  minLength: 3
+- key: PR
+  label: GitHub Pull Request Number
+  type: int
+  minInt: 1
+
+footerFormat: |
+  {{- $contributorDict := dict }}
+  {{- /* any names added to this list should be all lowercase for later matching purposes */}}
+  {{- $core_team := list "niallrees" "ian-whitestone" }}
+  {{- range $change := .Changes }}
+    {{- $authorList := splitList " " $change.Custom.Author }}
+    {{- /* loop through all authors for a PR */}}
+    {{- range $author := $authorList }}
+      {{- $authorLower := lower $author }}
+      {{- /* we only want to include non-core team contributors */}}
+      {{- if not (has $authorLower $core_team)}}
+        {{- /* Docs kind link back to dbt-docs instead of dbt-core PRs */}}
+        {{- $prLink := $change.Kind }}
+        {{- /* check if this contributor has other PRs associated with them already */}}
+        {{- if hasKey $contributorDict $author }}
+          {{- $prList := get $contributorDict $author }}
+          {{- $prList = append $prList $prLink  }}
+          {{- $contributorDict := set $contributorDict $author $prList }}
+        {{- else }}
+          {{- $prList := list $prLink }}
+          {{- $contributorDict := set $contributorDict $author $prList }}
+        {{- end }}
+      {{- end}}
+    {{- end}}
+  {{- end }}
+  {{- /* no indentation here for formatting so the final markdown doesn't have unneeded indentations */}}
+  {{- if $contributorDict}}
+  ### Contributors
+  {{- range $k,$v := $contributorDict }}
+  - [@{{$k}}](https://github.com/{{$k}}) ({{ range $index, $element := $v }}{{if $index}}, {{end}}{{$element}}{{end}})
+  {{- end }}
+  {{- end }}
