@@ -9,6 +9,14 @@ This model guarantees 1 row per day per usage type, by filling in missing values
 known day.
 */
 
+{%- set account_locator -%}
+{%- if var('account_locator', none) -%}
+'{{ var('account_locator') }}'
+{%- else -%}
+current_account()
+{%- endif -%}
+{%- endset -%}
+
 with
 dates_base as (
     select dateadd(
@@ -28,7 +36,7 @@ rate_sheet_daily as (
         service_type
     from {{ ref('stg_rate_sheet_daily') }}
     where
-        account_locator = {{ var('DBT_CURRENT_ACCOUNT', 'current_account()') }}
+        account_locator = {{ account_locator }}
 ),
 
 rates_date_range as (
@@ -79,5 +87,3 @@ rates as (
 select *
 from rates
 order by date
-
-
