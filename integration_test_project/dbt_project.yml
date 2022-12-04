@@ -17,4 +17,4 @@ query-comment:
   append: true # Snowflake removes prefixed comments.
 
 vars:
-  DBT_CURRENT_ACCOUNT: "'a09e1'"
+  account_locator: a09e1
