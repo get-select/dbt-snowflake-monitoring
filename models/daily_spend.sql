@@ -1,39 +1,17 @@
-{{ config(materialized='incremental') }}
+-- depends_on: {{ ref('stg_warehouse_metering_history') }}
+{{ config(materialized='table') }}
 
 with date_spine as (
-
-    {# In a full refresh, this logic sets the start_date of the date spine to the first date in stg_metering_history #}
-    {# In incremental mode, this logic sets the start_date of the date spine to be the day after the max current date in this model #}
-    {# The end_date is always set to today's date (the date_spine function excludes this date) #}
-
-    {% if is_incremental() %}
-    {% set results = run_query("select dateadd(day, 1, max(date)) from " ~ this) %}
     {% if execute %}
-    {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
-    {% endif %}
-    {% else %}
-    {% set results = run_query("select min(convert_timezone('UTC', start_time)::date) from " ~ ref('stg_metering_history')) %}
-    {% if execute %}
+        {% set results = run_query("select dateadd(day, 1, timestampadd(hour, -1, convert_timezone('UTC', min(start_time)))::date) from " ~ ref('stg_warehouse_metering_history')) %} {# first complete day #} -- noqa
         {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
     {% endif %}
-{% endif %}
-
-    {% set results = run_query("select " ~ start_date ~ "::date < convert_timezone('UTC', current_timestamp)::date") %}
-    {% if execute %}
-    {% set should_run = results.columns[0][0] %}
-    {% endif %}
-
-    {% if should_run %}
     {{ dbt_utils.date_spine(
             datepart="day",
-            start_date=start_date ~ "::date",
+            start_date=start_date,
             end_date="convert_timezone('UTC', current_timestamp)::date"
         )
     }}
-{% else %}
-    select '2000-01-01'::date as date_day
-    where false
-    {% endif %}
 ),
 
 dates as (
