@@ -99,6 +99,33 @@ compute_spend_daily as (
     group by 1, 2, 3, 4
 ),
 
+serverless_task_rates as (
+    select
+        date,
+        max(effective_rate) as effective_rate
+    from {{ ref('daily_rates') }}
+    where
+        service_type = 'COMPUTE'
+        and usage_type in ('serverless tasks')
+    group by 1
+),
+
+serverless_task_spend_daily as (
+    select
+        dates.date,
+        'Serverless Tasks' as service,
+        null as storage_type,
+        null as warehouse_name,
+        database_name,
+        coalesce(sum(stg_serverless_task_history.credits_used * serverless_task_rates.effective_rate), 0) as spend
+    from dates
+    left join {{ ref('stg_serverless_task_history') }} on
+        dates.date = convert_timezone('UTC', stg_serverless_task_history.start_time)::date
+    left join serverless_task_rates on
+        dates.date = serverless_task_rates.date
+    group by 1, 2, 3, 4
+),
+
 cloud_services_rates as (
     select
         date,
@@ -264,3 +291,5 @@ union all
 select * from replication_spend_daily
 union all
 select * from search_optimization_spend_daily
+union all
+select * from serverless_task_spend_daily

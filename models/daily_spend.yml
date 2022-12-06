@@ -13,6 +13,6 @@ models:
     - name: warehouse_name
       description: Subcategories where service = "Compute" or "Cloud Services".
     - name: database_name
-      description: Subcategories where service = "Storage" and storage_type = "Table and Time Travel" or "Failsafe".
+      description: Subcategories where service = "Serverless Tasks" or service = "Storage" and storage_type = "Table and Time Travel" or "Failsafe".
     - name: spend
       description: Spend in the account's currency.
