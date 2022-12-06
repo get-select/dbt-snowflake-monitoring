@@ -1,6 +1,6 @@
 # dbt-snowflake-monitoring
 
-A dbt package to help you monitor Snowflake performance and costs. Documentation for the models can be found [here](https://get-select.github.io/dbt-snowflake-monitoring/#!/overview).
+From the [SELECT](select.dev) team, a dbt package to help you monitor Snowflake performance and costs. Documentation for the models can be found [here](https://get-select.github.io/dbt-snowflake-monitoring/#!/overview).
 
 ## Quickstart
 
