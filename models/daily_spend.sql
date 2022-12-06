@@ -116,7 +116,7 @@ serverless_task_spend_daily as (
         'Serverless Tasks' as service,
         null as storage_type,
         null as warehouse_name,
-        database_name,
+        stg_serverless_task_history.database_name,
         coalesce(sum(stg_serverless_task_history.credits_used * serverless_task_rates.effective_rate), 0) as spend
     from dates
     left join {{ ref('stg_serverless_task_history') }} on
