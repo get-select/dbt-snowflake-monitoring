@@ -123,7 +123,7 @@ serverless_task_spend_daily as (
         dates.date = convert_timezone('UTC', stg_serverless_task_history.start_time)::date
     left join serverless_task_rates on
         dates.date = serverless_task_rates.date
-    group by 1, 2, 3, 4
+    group by 1, 2, 3, 4, 5
 ),
 
 cloud_services_rates as (
