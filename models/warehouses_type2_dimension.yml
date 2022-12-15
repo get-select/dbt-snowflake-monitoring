@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: warehouses_type2_dimension
+    description: |
+      This model tracks the warehouse size and name over time. It contains 1 row per period that the warehouse state applies. The following caveats apply:
+
+      - if user changes the warehouse size/name, we won't register the new attributes until the next query runs against it
+      - this could also mean that warehouse size changes are not registered if they were changed and then reverted
+    columns:
+      - name: warehouse_id
+        description: The unique warehouse ID (assigned by Snowflake) that corresponds to the warehouse name in your account.
+      - name: warehouse_name
+        description: The name of the warehouse during the given period.
+      - name: warehouse_size
+        description: The size of the warehouse during the given period
+      - name: valid_from
+        description: Timestamp for the beginning of the period.
+      - name: valid_to
+        description: Timestamp for the end of the period.
+      - name: is_current
+        description: Boolean indicator to filter to the most recent state of the warehouse

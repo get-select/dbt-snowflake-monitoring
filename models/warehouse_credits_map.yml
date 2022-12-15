@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: warehouse_credits_map
+    description: This model contains the credit consumption for each type and size of warehouse. It contains 1 row per hour per warehouse size and type.
+    columns:
+      - name: warehouse_size
+        description: The size of the warehouse. These values will join directly to the warehouse_size column in the query_history models.
+      - name: warehouse_type
+        description: The type of the warehouse. Will be STANDARD or SNOWPARK-OPTIMIZED.
+      - name: credits_per_hour
+        description: The hourly rate at which credits are charged for this warehouse configuration
+      - name: credits_per_minute
+        description: The minutely rate at which credits are charged for this warehouse configuration
+      - name: credits_per_second
+        description: The secondly rate at which credits are charged for this warehouse configuration
+
