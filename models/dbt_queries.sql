@@ -20,6 +20,6 @@ select
     'Required dbt_cloud_account_id variable not set' as dbt_cloud_job_url,
     'Required dbt_cloud_account_id variable not set' as dbt_cloud_run_url,
     {%- endif %}
-    *
+    * exclude dbt_metadata
 from {{ ref('query_history_enriched') }}
 where dbt_metadata is not null
