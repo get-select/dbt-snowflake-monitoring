@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: dbt_queries
+    description: Filtered version of query_history_enriched just for queries issued by dbt. Adds additional dbt-specific columns.
+    columns:
+      - name: dbt_version
+        description: Version of dbt in use.
+      - name: dbt_target_name
+        description: The target name for the dbt invocation.
+      - name: dbt_target_database
+        description: The target database for the dbt invocation.
+      - name: dbt_target_schema
+        description: The target schema for the dbt invocation.
+      - name: dbt_invocation_id
+        description: The id of the dbt invocation.
+      - name: dbt_node_id
+        description: The identifier for the node that the query relates to.
+      - name: dbt_node_resource_type
+        description: The resource type of the node that the query relates to.
+      - name: dbt_node_materialized
+        description: The materialization of the node that the query relates to.
+      - name: dbt_node_is_incremental
+        description: The materialization of the node that the query relates to.
+      - name: dbt_cloud_project_id
+        description: If using dbt Cloud, the ID of the project.
+      - name: dbt_cloud_job_id
+        description: If using dbt Cloud, the ID of the issuing job.
+      - name: dbt_cloud_run_id
+        description: If using dbt Cloud, the ID of the issuing run.
+      - name: dbt_cloud_run_reason_category
+        description: If using dbt Cloud, the run reason category for the issuing run.
+      - name: dbt_cloud_run_reason
+        description: If using dbt Cloud, the run reason for the issuing run.
+      - name: dbt_cloud_job_url
+        description: If using dbt Cloud, the URL of the issuing job. The dbt_cloud_account_id dbt variable must be set for this field to populate.
+      - name: dbt_cloud_run_url
+        description: If using dbt Cloud, the URL of the issuing run. The dbt_cloud_account_id dbt variable must be set for this field to populate.

@@ -1,0 +1,7 @@
+kind: Features
+body: Add dbt_queries model to easily understand dbt model costs with links to dbt
+  Cloud
+time: 2022-12-21T13:28:10.065082Z
+custom:
+  Author: NiallRees
+  PR: "47"

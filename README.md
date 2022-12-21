@@ -26,6 +26,12 @@ query-comment:
   append: true # Snowflake removes prefixed comments.
 ```
 
+The generate URLs to dbt Cloud jobs and runs in the `dbt_queries` model, add the following variable to `dbt_project.yml`:
+```yaml
+vars:
+  dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/next/deploy/<this_number>/
+```
+
 ## Example Usage
 
 ### Sample Queries
