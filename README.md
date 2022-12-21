@@ -1,6 +1,6 @@
 # dbt-snowflake-monitoring
 
-From the [SELECT](https://select.dev) team, a dbt package to help you monitor Snowflake performance and costs. Documentation for the models can be found [here](https://get-select.github.io/dbt-snowflake-monitoring/#!/overview).
+From the [SELECT](https://select.dev) team, a dbt package to help you monitor Snowflake performance and coss. Documentation for the models can be found [here](https://get-select.github.io/dbt-snowflake-monitoring/#!/overview).
 
 ## Quickstart
 
@@ -15,7 +15,7 @@ Add the following to your `packages.yml` file:
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 1.2.3
+    version: 1.3.0
 ```
 
 To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, add the following to `dbt_project.yml`:
