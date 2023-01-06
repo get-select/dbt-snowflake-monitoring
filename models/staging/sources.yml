@@ -19,4 +19,5 @@ sources:
     schema: organization_usage
     tables:
       - name: rate_sheet_daily
+      - name: remaining_balance_daily
 

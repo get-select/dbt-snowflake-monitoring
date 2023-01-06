@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: stg_remaining_balance_daily
+    description: A materialized copy of the snowflake.organization.rate_sheet_daily view. It can be used to get the effective rates used for calculating usage in the organization currency based on credits used for all Snowflake accounts in your organization. It contains 1 row per day per rate in Snowflake account (some days can have more than 1 rate for a given usage_type, usually when the contract is updated).
+    columns:
+      - name: date
+        description: The date of the FREE_USAGE_BALANCE or CAPACITY_BALANCE in the UTC time zone.
+      - name: organization_name
+        description: Name of the organization.
+      - name: contract_number
+        description: Contract number for the organization.
+      - name: currency
+        description: The currency of the FREE_USAGE_BALANCE or CAPACITY_BALANCE or ON_DEMAND_CONSUMPTION_BALANCE.
+      - name: free_usage_balance
+        description: The amount of free usage in currency that is available for use as of the date. This is the end of day balance.
+      - name: capacity_balance
+        description: The amount of capacity in currency that is available for use as of the date. This is the end of day balance.
+      - name: on_demand_consumption_balance
+        description: The amount of consumption at on demand prices that will be invoiced given that all the free usage and capacity balances have been exhausted. This is a negative value (e.g. -250) until the invoice is paid. This is the end of day balance.
+      - name: rollover_balance
+        description: The amount of rollover balance in currency that is available for use at the end of the date. At the end of a contract term, it is calculated as sum(AMOUNT) from the CONTRACT_ITEMS view - sum(USAGE_IN_CURRENCY) from the USAGE_IN_CURRENCY_DAILY view.
