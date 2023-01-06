@@ -1,35 +1,9 @@
 {{ config(materialized='table') }}
 
 with
-daily_rates as (
-    select
-        date,
-        max(effective_rate) as effective_rate
-    from {{ ref('daily_rates') }}
-    where usage_type in ('compute', 'overage-compute')
-    group by date
-),
-/*
-Calculate a "stop threshold", which tells us the latest timestamp we should process data up until.
-
-For example, if warehouse metering history has data up until 2022-10-10 16:00:00, daily_rates
-has data for 2022-10-10 (aka the full day), then we would only want to consider queries
-that ended before 2022-10-10 16:00:00. Otherwise we won't accurately calculate their cost.
-*/
-stop_thresholds as (
+stop_threshold as (
     select max(end_time) as latest_ts
     from {{ ref('stg_warehouse_metering_history') }}
-
-    union all
-
-    -- Can use data up until the end of the day of the latest date in daily_rates
-    select dateadd('day', 1, max(date)) as latest_ts
-    from daily_rates
-),
-
-stop_threshold as (
-    select min(latest_ts) as latest_ts
-    from stop_thresholds
 ),
 
 filtered_queries as (
@@ -49,7 +23,7 @@ filtered_queries as (
         start_time,
         end_time
     from {{ ref('stg_query_history') }}
-    where end_time < (select latest_ts from stop_threshold)
+    where end_time <= (select latest_ts from stop_threshold)
 ),
 
 hours_list as (
@@ -57,7 +31,7 @@ hours_list as (
         dateadd(
             'hour',
             '-' || row_number() over (order by seq4() asc),
-            dateadd('day', '+1', current_date)
+            dateadd('day', '+1', current_date::timestamp_tz)
         ) as hour_start,
         dateadd('hour', '+1', hour_start) as hour_end
     from table(generator(rowcount => (24 * 730)))
@@ -99,13 +73,19 @@ query_cost as (
     select
         query_seconds_per_hour.*,
         credits_billed_hourly.credits_used_compute * daily_rates.effective_rate as actual_warehouse_cost,
-        credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour * daily_rates.effective_rate as allocated_compute_cost_in_hour
+        credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as allocated_compute_cost_in_hour
     from query_seconds_per_hour
     inner join credits_billed_hourly
         on query_seconds_per_hour.warehouse_id = credits_billed_hourly.warehouse_id
             and query_seconds_per_hour.hour = credits_billed_hourly.hour
-    inner join daily_rates
+    left join {{ ref('daily_rates') }}
         on date(query_seconds_per_hour.start_time) = daily_rates.date
+            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.usage_type = 'compute'
+    inner join {{ ref('daily_rates') }} as current_rates
+        on current_rates.is_latest_rate
+            and current_rates.service_type = 'COMPUTE'
+            and current_rates.usage_type = 'compute'
 ),
 
 cost_per_query as (
@@ -115,7 +95,8 @@ cost_per_query as (
         any_value(end_time) as end_time,
         any_value(execution_start_time) as execution_start_time,
         sum(allocated_compute_cost_in_hour) as compute_cost,
-        any_value(credits_used_cloud_services) as credits_used_cloud_services
+        any_value(credits_used_cloud_services) as credits_used_cloud_services,
+        any_value(ran_on_warehouse) as ran_on_warehouse
     from query_cost
     group by 1
 ),
@@ -137,7 +118,8 @@ all_queries as (
         end_time,
         execution_start_time,
         compute_cost,
-        credits_used_cloud_services
+        credits_used_cloud_services,
+        ran_on_warehouse
     from cost_per_query
 
     union all
@@ -148,7 +130,8 @@ all_queries as (
         end_time,
         execution_start_time,
         0 as compute_cost,
-        credits_used_cloud_services
+        credits_used_cloud_services,
+        ran_on_warehouse
     from filtered_queries
     where
         not ran_on_warehouse
@@ -164,11 +147,18 @@ select
     -- For example, at 12PM on the latest day, it's possible that cloud credits make up <10% of compute cost, so the queries
     -- from that day are not allocated any cloud_services_cost. The next time the model runs, after we have the full day of data,
     -- this may change if cloud credits make up >10% of compute cost.
-    (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * daily_rates.effective_rate as cloud_services_cost,
-    all_queries.compute_cost + cloud_services_cost as query_cost
+    (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as cloud_services_cost,
+    all_queries.compute_cost + cloud_services_cost as query_cost,
+    all_queries.ran_on_warehouse
 from all_queries
 inner join credits_billed_daily
     on date(all_queries.start_time) = credits_billed_daily.date
-inner join daily_rates
+left join {{ ref('daily_rates') }}
     on date(all_queries.start_time) = daily_rates.date
+        and daily_rates.service_type = 'COMPUTE'
+        and daily_rates.usage_type = 'cloud services'
+inner join {{ ref('daily_rates') }} as current_rates
+    on current_rates.is_latest_rate
+        and current_rates.service_type = 'COMPUTE'
+        and current_rates.usage_type = 'cloud services'
 order by all_queries.start_time asc
