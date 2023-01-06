@@ -42,6 +42,12 @@ models:
     +enabled: false
 ```
 
+## Package Alternatives & Maintenance
+
+Prior to releasing this package, [snowflake-spend](https://gitlab.com/gitlab-data/snowflake_spend) by the Gitlab data team was the only package available for monitoring Snowflake spend. According to their README, the package is currently maintained by the Gitlab data team, but there does not appear to be any active development in it (as of January 2023).
+
+The `dbt-snowflake-monitoring` package is actively developed & maintained by the [SELECT](https://select.dev/). It powers many of the dashboards and features available in our product. The package goes beyond just modeling warehouse spend. We calculate cost per query using the methodology described [here](https://select.dev/posts/cost-per-query), model all components of your Snowflake bill, and plan to provide additional query & warehouse performance related models.
+
 ## Example Usage
 
 ### Sample Queries
