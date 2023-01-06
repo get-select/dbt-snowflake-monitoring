@@ -49,7 +49,7 @@ filtered_queries as (
         start_time,
         end_time
     from {{ ref('stg_query_history') }}
-    where end_time <= (select latest_ts from stop_threshold)
+    where end_time < (select latest_ts from stop_threshold)
 ),
 
 hours_list as (
@@ -160,6 +160,10 @@ select
     all_queries.end_time,
     all_queries.execution_start_time,
     all_queries.compute_cost,
+    -- For the most recent day, which is not yet complete, this calculation won't be perfect.
+    -- For example, at 12PM on the latest day, it's possible that cloud credits make up <10% of compute cost, so the queries
+    -- from that day are not allocated any cloud_services_cost. The next time the model runs, after we have the full day of data,
+    -- this may change if cloud credits make up >10% of compute cost.
     (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * daily_rates.effective_rate as cloud_services_cost,
     all_queries.compute_cost + cloud_services_cost as query_cost
 from all_queries
