@@ -2,7 +2,13 @@ version: 2
 
 models:
   - name: daily_rates
-    description: A copy of snowflake.organization_usage.rate_sheet_daily for the current Snowflake account, with missing dates imputed.
+    description: >
+      A copy of snowflake.organization_usage.rate_sheet_daily for the current Snowflake account, with missing dates imputed.
+      This model accounts for the fact that multiple rates will appear on a given day when the account is in overage. This
+      happens for on-demand accounts, or fixed contract accounts who have exceeded their remaining balance. When the account
+      is in overage, the usage_type will appear as 'compute' (instead of 'overage-compute'), but the effective_rate will be
+      the one associated with `overage-compute`. You can identify these instances using `is_overage_rate` to help understand
+      why a rate may have suddenly changed.
     columns:
       - name: date
         description: Date (in the UTC time zone) for the effective price.
@@ -12,3 +18,7 @@ models:
         description: The type of usage, which can be one of compute, storage, etc.
       - name: effective_rate
         description: The rate after applying any applicable discounts per the contract for the organization.
+      - name: is_overage_rate
+        description: Indicator for whether the effective_rate is an overage rate.
+      - name: is_latest_rate
+        description: Indicator for whether the effective_rate is the most recent.

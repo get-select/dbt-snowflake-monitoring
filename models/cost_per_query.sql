@@ -81,7 +81,7 @@ query_seconds_per_hour as (
         *,
         datediff('millisecond', greatest(execution_start_time, hour_start), least(end_time, hour_end)) as num_milliseconds_query_ran,
         sum(num_milliseconds_query_ran) over (partition by warehouse_id, hour_start) as total_query_milliseconds_in_hour,
-        num_milliseconds_query_ran / total_query_milliseconds_in_hour as fraction_of_total_query_time_in_hour,
+        div0(num_milliseconds_query_ran, total_query_milliseconds_in_hour) as fraction_of_total_query_time_in_hour,
         hour_start as hour
     from query_hours
 ),

@@ -32,6 +32,16 @@ vars:
   dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/next/deploy/<this_number>/
 ```
 
+### Only want to use the get_query_comment macro?
+
+If you only want to use the `get_query_comment` macro, and don't want to run the models, you can exclude them from running by adding the following to your `dbt_project.yml`:
+
+```yaml
+models:
+  dbt_snowflake_monitoring:
+    +enabled: false
+```
+
 ## Example Usage
 
 ### Sample Queries

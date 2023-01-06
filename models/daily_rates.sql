@@ -39,6 +39,14 @@ rate_sheet_daily as (
         account_locator = {{ account_locator }}
 ),
 
+remaining_balance_daily as (
+    select
+        date,
+        free_usage_balance + capacity_balance + on_demand_consumption_balance + rollover_balance as remaining_balance,
+        remaining_balance < 0 as is_account_in_overage
+    from {{ ref('stg_remaining_balance_daily') }}
+),
+
 rates_date_range as (
     select
         min(date) as start_date,
@@ -64,7 +72,7 @@ base as (
         on db.date between dr.start_date and dr.end_date
 ),
 
-rates as (
+rates_w_overage as (
     select
         base.date,
         base.usage_type,
@@ -77,13 +85,41 @@ rates as (
             rate_sheet_daily.effective_rate,
             lag(rate_sheet_daily.effective_rate) ignore nulls over (partition by base.usage_type order by base.date),
             lead(rate_sheet_daily.effective_rate) ignore nulls over (partition by base.usage_type order by base.date)
-        ) as effective_rate
+        ) as effective_rate,
+        base.usage_type like 'overage-%' as is_overage_rate,
+        replace(base.usage_type, 'overage-', '') as associated_usage_type,
+        case
+            when remaining_balance_daily.is_account_in_overage and is_overage_rate then 1
+            when not remaining_balance_daily.is_account_in_overage and not is_overage_rate then 1
+            else 0
+        end as rate_priority
+
     from base
+    inner join remaining_balance_daily
+        on base.date = remaining_balance_daily.date
     left join rate_sheet_daily
         on base.date = rate_sheet_daily.date
             and base.usage_type = rate_sheet_daily.usage_type
+),
+
+rates as (
+    select
+        date,
+        usage_type,
+        associated_usage_type,
+        service_type,
+        effective_rate,
+        is_overage_rate
+    from rates_w_overage
+    qualify row_number() over (partition by date, service_type, associated_usage_type order by rate_priority desc) = 1
 )
 
-select *
+select
+    date,
+    associated_usage_type as usage_type,
+    service_type,
+    effective_rate,
+    is_overage_rate,
+    row_number() over (partition by service_type, associated_usage_type order by date desc) = 1 as is_latest_rate
 from rates
 order by date
