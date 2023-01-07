@@ -1,4 +1,4 @@
-{{ config(materialized='incremental') }}
+{{ config(materialized='incremental', unique_key=['query_id', 'start_time']) }}
 
 with
 query_history as (
@@ -16,7 +16,9 @@ query_history as (
     from {{ ref('stg_query_history') }}
 
     {% if is_incremental() %}
-        where end_time > (select max(end_time) from {{ this }})
+        -- Conservatively re-process the last 7 days to account for late arriving rates data
+        -- which changes the cost per query
+        where end_time > (select dateadd(day, -7, max(end_time)) from {{ this }})
     {% endif %}
 ),
 
@@ -24,7 +26,9 @@ cost_per_query as (
     select *
     from {{ ref('cost_per_query') }}
     {% if is_incremental() %}
-        where end_time > (select max(end_time) from {{ this }})
+        -- Conservatively re-process the last 7 days to account for late arriving rates data
+        -- which changes the cost per query
+        where end_time > (select dateadd(day, -7, max(end_time)) from {{ this }})
     {% endif %}
 )
 
