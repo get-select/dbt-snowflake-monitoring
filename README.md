@@ -15,7 +15,7 @@ Add the following to your `packages.yml` file:
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 1.3.1
+    version: 1.4.0
 ```
 
 To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, add the following to `dbt_project.yml`:

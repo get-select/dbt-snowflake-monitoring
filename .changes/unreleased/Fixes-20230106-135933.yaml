@@ -1,6 +1,0 @@
-kind: Fixes
-body: Select correct overage vs. regular rate each day
-time: 2023-01-06T13:59:33.400955-07:00
-custom:
-  Author: ian-whitestone
-  PR: "59"
