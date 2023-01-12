@@ -57,7 +57,7 @@ storage_spend_daily as (
         coalesce(sum(div0(storage_terabytes_daily.storage_terabytes, dates.days_in_month) * daily_rates.effective_rate), 0) as spend
     from dates
     left join storage_terabytes_daily on dates.date = storage_terabytes_daily.date
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on storage_terabytes_daily.date = daily_rates.date
             and daily_rates.service_type = 'STORAGE'
             and daily_rates.usage_type = 'storage'
@@ -75,7 +75,7 @@ compute_spend_daily as (
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'compute'
@@ -94,7 +94,7 @@ serverless_task_spend_daily as (
     from dates
     left join {{ ref('stg_serverless_task_history') }} on
         dates.date = convert_timezone('UTC', stg_serverless_task_history.start_time)::date
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'serverless tasks'
@@ -112,7 +112,7 @@ adj_for_incl_cloud_services_daily as (
     from dates
     left join {{ ref('stg_metering_daily_history') }} on
         dates.date = stg_metering_daily_history.date
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'cloud services'
@@ -131,7 +131,7 @@ cloud_services_spend_daily as (
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'WAREHOUSE_METERING'
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'cloud services'
@@ -150,7 +150,7 @@ automatic_clustering_spend_daily as (
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'AUTO_CLUSTERING'
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'automatic clustering'
@@ -169,7 +169,7 @@ materialized_view_spend_daily as (
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'MATERIALIZED_VIEW'
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'materialized view' {# TODO: need someone to confirm whether its materialized 'view' or 'views' #}
@@ -188,7 +188,7 @@ snowpipe_spend_daily as (
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'PIPE'
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'snowpipe'
@@ -207,7 +207,7 @@ query_acceleration_spend_daily as (
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'QUERY_ACCELERATION'
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'query acceleration'
@@ -226,7 +226,7 @@ replication_spend_daily as (
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'REPLICATION'
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'replication'
@@ -245,7 +245,7 @@ search_optimization_spend_daily as (
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
         and stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'search optimization`'
