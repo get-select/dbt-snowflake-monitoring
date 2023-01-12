@@ -1,0 +1,6 @@
+kind: Fixes
+body: Inner join daily_rates to avoid $0 entries in daily_spend for incomplete days
+time: 2023-01-12T09:50:10.860697Z
+custom:
+  Author: NiallRees
+  PR: "66"
