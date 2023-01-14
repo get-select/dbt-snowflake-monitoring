@@ -17,7 +17,7 @@ select
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/jobs/' || dbt_cloud_job_id as dbt_cloud_job_url,
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/runs/' || dbt_cloud_run_id as dbt_cloud_run_url,
     {%- else -%}
-    'Required dbt_cloud_account_id variable not set' as dbt_cloud_job_url,
+    'Required dbt_cloud_account_id variable not set' as dbt_cloud_job_url, -- noqa
     'Required dbt_cloud_account_id variable not set' as dbt_cloud_run_url,
     {%- endif %}
     * exclude dbt_metadata
