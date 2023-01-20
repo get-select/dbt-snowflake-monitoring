@@ -54,23 +54,6 @@ where service in ('Storage')
 group by 1, 2, 3, 4
 ```
 
-## Storage Costs
-
-### Monthly Spend per Database
-This query uses the `daily_spend` model to explore table spend by database. Note that this also returns storage costs for data held in stages (user and table stages or internal named stages), see the `storage_type` column.
-
-```sql
-select
-    date_trunc(month, date)::date as month,
-    service,
-    storage_type,
-    database_name,
-    sum(spend)
-from daily_spend
-where service in ('Storage')
-group by 1, 2, 3, 4
-```
-
 ## Query Cost Attribution
 Snowflake bills for the number of seconds that a warehouse is running, not by query. Query cost attribution helps understand how queries are contributing to warehouse active time. Removing a query will not reduce the bill by the exact amount attributed to the query if other queries are running at the same time and causing the warehouse to stay active.
 
@@ -129,7 +112,7 @@ order by total_cost_last_30d desc
 limit 10
 ```
 
-### daily dbt model running costs over time
+### Daily dbt model running costs
 
 ```sql
 select
