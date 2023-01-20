@@ -1,6 +1,0 @@
-kind: Fixes
-body: Fix error on initial compile with no models created yet
-time: 2023-01-20T16:22:22.483535Z
-custom:
-  Author: NiallRees
-  PR: "70"
