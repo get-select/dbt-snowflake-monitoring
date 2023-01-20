@@ -29,7 +29,7 @@ query-comment:
 The generate URLs to dbt Cloud jobs and runs in the `dbt_queries` model, add the following variable to `dbt_project.yml`:
 ```yaml
 vars:
-  dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/next/deploy/<this_number>/
+  dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/deploy/<this_number>/projects/<not_this_number>/jobs 
 ```
 
 ### Only want to use the get_query_comment macro?
