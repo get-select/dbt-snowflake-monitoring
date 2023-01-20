@@ -3,8 +3,13 @@
 
 with date_spine as (
     {% if execute %}
-        {% set results = run_query("select dateadd(day, 1, timestampadd(hour, -1, convert_timezone('UTC', min(start_time)))::date) from " ~ ref('stg_warehouse_metering_history')) %} {# first complete day #} -- noqa
-{% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
+{% set stg_warehouse_metering_history_relation = load_relation(ref('stg_warehouse_metering_history')) %}
+        {% if stg_warehouse_metering_history_relation %}
+            {% set results = run_query("select dateadd(day, 1, timestampadd(hour, -1, convert_timezone('UTC', min(start_time)))::date) from " ~ ref('stg_warehouse_metering_history')) %} {# first complete day #} -- noqa
+            {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
+        {% else %}
+            {% set start_date = "dateadd(day, -1, convert_timezone('UTC', current_timestamp)::date)" %} {# this is just a dummy date for initial compilations before stg_warehouse_metering_history exists #}
+        {% endif %}
     {% endif %}
 {{ dbt_utils.date_spine(
             datepart="day",
