@@ -112,7 +112,7 @@ order by total_cost_last_30d desc
 limit 10
 ```
 
-### daily dbt model running costs over time
+### Daily dbt model running costs
 
 ```sql
 select
