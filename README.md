@@ -15,7 +15,7 @@ Add the following to your `packages.yml` file:
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 1.4.2
+    version: 1.5.0
 ```
 
 To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, add the following to `dbt_project.yml`:
@@ -29,7 +29,7 @@ query-comment:
 The generate URLs to dbt Cloud jobs and runs in the `dbt_queries` model, add the following variable to `dbt_project.yml`:
 ```yaml
 vars:
-  dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/deploy/<this_number>/projects/<not_this_number>/jobs 
+  dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/deploy/<this_number>/projects/<not_this_number>/jobs
 ```
 
 ### Only want to use the get_query_comment macro?
