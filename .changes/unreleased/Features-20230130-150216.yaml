@@ -1,0 +1,6 @@
+kind: Features
+body: Add access_history model and unused tables pattern
+time: 2023-01-30T15:02:16.963425-05:00
+custom:
+  Author: ian-whitestone
+  PR: "73"
