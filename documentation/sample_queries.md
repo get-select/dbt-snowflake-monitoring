@@ -61,15 +61,16 @@ This query uses the `query_tables_accessed` model (available as of 1.6.0) to ide
 with
 table_access_summary as (
     select
-        full_table_name,
+        table_id,
+        any_value(full_table_name) as full_table_name,
         count_if(query_start_time >= dateadd('day', -30, current_date)) as num_queries_last_30d,
         count_if(query_start_time >= dateadd('day', -90, current_date)) as num_queries_last_90d
-    from query_tables_accessed
+    from query_table_access
     group by 1
 ),
 table_storage_metrics as (
     select
-        table_catalog || '.' || table_schema || '.' || table_name as full_table_name,
+        id as table_id,
         sum(active_bytes)/power(1024,3) as active_gb,
         sum(time_travel_bytes)/power(1024,3) as time_travel_gb,
         sum(failsafe_bytes)/power(1024,3) as failsafe_gb,
@@ -88,10 +89,10 @@ table_storage_metrics as (
 )
 select
     table_storage_metrics.*,
-    table_access_summary.* exclude (full_table_name)
+    table_access_summary.* exclude (table_id)
 from table_storage_metrics
 inner join table_access_summary
-    on table_storage_metrics.full_table_name=table_access_summary.full_table_name
+    on table_storage_metrics.table_id=table_access_summary.table_id
 where
     num_queries_last_30d = 0 -- modify as needed
 order by total_storage_gb desc

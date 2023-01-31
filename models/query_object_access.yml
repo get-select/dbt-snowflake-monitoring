@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: query_object_access
+    description: This model tracks the objects directly accessed by a query. It contains 1 row per query per object. An object can be a regular table owned/created by your account, a table from a data share, a secured view, or an external table. See https://docs.snowflake.com/en/sql-reference/account-usage/access_history.html for more details. Access history is only available for Snowflake accounts on enterprise or higher, and therefore this model will be empty for standard accounts.
+    columns:
+      - name: _unique_id
+        description: Unique identifier for each row in the table
+      - name: query_id
+        description: An internal, system-generated identifier for the SQL statement.
+      - name: query_start_time
+        description: The statement start time (UTC time zone).
+      - name: user_name
+        description: The user who issued the query.
+      - name: object_name
+        description: Fully qualified object name. For a table, this would be <database_name>.<schema_name>.<table_name>
+      - name: object_domain
+        description: "One of the following: Table, View, Materialized view, External table, Stream, or Stage."
+      - name: table_id
+        description: Unique identifier for the table/view. Will be null for secured views and tables from a data share.
+      - name: columns_accessed
+        description: Array of column_names accessed in the table
