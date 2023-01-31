@@ -1,5 +1,5 @@
 kind: Features
-body: Add access_history model and unused tables pattern
+body: Add query_object_access and query_table_access models
 time: 2023-01-30T15:02:16.963425-05:00
 custom:
   Author: ian-whitestone
