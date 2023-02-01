@@ -55,7 +55,7 @@ group by 1, 2, 3, 4
 ```
 
 ### Unused Tables
-This query uses the `query_tables_accessed` model (available as of 1.6.0) to identify tables which have not been queried in the last 30 days. The total storage costs of each table are also shown, which uses the account's current storage rate (usually between $20-$40 per TB per month).
+This query uses the `query_table_access` model (available as of 1.6.0) to identify tables which have not been queried in the last 30 days. The total storage costs of each table are also shown, which uses the account's current storage rate (usually between $20-$40 per TB per month).
 ``
 
 ```sql
