@@ -86,7 +86,6 @@ table_storage_metrics as (
     where
         not deleted
     group by 1
-    order by annualized_storage_cost desc
 )
 select
     table_storage_metrics.*,
