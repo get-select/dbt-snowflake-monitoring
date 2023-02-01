@@ -54,6 +54,50 @@ where service in ('Storage')
 group by 1, 2, 3, 4
 ```
 
+### Unused Tables
+This query uses the `query_table_access` model (available as of 1.6.0) to identify tables which have not been queried in the last 30 days. The total storage costs of each table are also shown, which uses the account's current storage rate (usually between $20-$40 per TB per month).
+``
+
+```sql
+with
+table_access_summary as (
+    select
+        table_id,
+        any_value(full_table_name) as full_table_name,
+        count_if(query_start_time >= dateadd('day', -30, current_date)) as num_queries_last_30d,
+        count_if(query_start_time >= dateadd('day', -90, current_date)) as num_queries_last_90d
+    from query_table_access
+    group by 1
+),
+table_storage_metrics as (
+    select
+        id as table_id,
+        sum(active_bytes)/power(1024,3) as active_gb,
+        sum(time_travel_bytes)/power(1024,3) as time_travel_gb,
+        sum(failsafe_bytes)/power(1024,3) as failsafe_gb,
+        sum(retained_for_clone_bytes)/power(1024,3) as retained_for_clone_gb,
+        (active_gb + time_travel_gb + failsafe_gb + retained_for_clone_gb) as total_storage_gb,
+        total_storage_gb/1024 as total_storage_tb,
+        total_storage_tb*12*any_value(daily_rates.effective_rate) as annualized_storage_cost
+    from snowflake.account_usage.table_storage_metrics
+    inner join daily_rates
+        on daily_rates.is_latest_rate
+        and daily_rates.usage_type='storage'
+    where
+        not deleted
+    group by 1
+)
+select
+    table_storage_metrics.*,
+    table_access_summary.* exclude (table_id)
+from table_storage_metrics
+inner join table_access_summary
+    on table_storage_metrics.table_id=table_access_summary.table_id
+where
+    num_queries_last_30d = 0 -- modify as needed
+order by total_storage_gb desc
+```
+
 ## Query Cost Attribution
 Snowflake bills for the number of seconds that a warehouse is running, not by query. Query cost attribution helps understand how queries are contributing to warehouse active time. Removing a query will not reduce the bill by the exact amount attributed to the query if other queries are running at the same time and causing the warehouse to stay active.
 

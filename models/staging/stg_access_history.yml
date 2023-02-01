@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: stg_access_history
+    description: See https://docs.snowflake.com/en/sql-reference/account-usage/access_history.html
+    columns:
+      - name: query_id
+        description: An internal, system-generated identifier for the SQL statement.
+      - name: query_start_time
+        description: The statement start time (UTC time zone).
+      - name: user_name
+        description: The user who issued the query.
+      - name: direct_objects_accessed
+        description: A JSON array of data objects such as tables, views, and columns directly named in the query explicitly or through shortcuts such as using an asterisk (i.e. *). Virtual columns can be returned in this field.
+      - name: base_objects_accessed
+        description: A JSON array of all base data objects, specifically, columns of tables to execute the query. This field specifies view names or view columns, including virtual columns, if a shared view is accessed in a data sharing consumer account.
+      - name: objects_modified
+        description: A JSON array that specifies the objects that were associated with a write operation in the query.

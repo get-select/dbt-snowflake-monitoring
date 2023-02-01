@@ -13,6 +13,7 @@ sources:
       - name: metering_daily_history
       - name: serverless_task_history
       - name: warehouse_events_history
+      - name: access_history
 
   - name: snowflake_organization_usage
     database: snowflake
