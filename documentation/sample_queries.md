@@ -94,7 +94,7 @@ inner join table_access_summary
     on table_storage_metrics.table_id=table_access_summary.table_id
 where
     num_queries_last_30d = 0 -- modify as needed
-order by total_storage_gb desc
+order by table_storage_metrics.annualized_storage_cost desc
 ```
 
 ## Query Cost Attribution
