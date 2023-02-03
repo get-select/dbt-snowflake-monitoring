@@ -1,3 +1,4 @@
+{# have to reimplement is_incremental because node.type hasn't populated at this stage #}
 {% macro custom_is_incremental(node) %}
     {{ return(
         node.config.materialized == 'incremental'
