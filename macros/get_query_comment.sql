@@ -1,8 +1,9 @@
-{# have to reimplement is_incremental because node.type hasn't populated #}
+{# Have to reimplement is_incremental because node.type hasn't populated at this stage #}
+{# This doesn't yet account for full refreshes due to table not existing yet #}
 {% macro custom_is_incremental(node) %}
     {{ return(
         node.config.materialized == 'incremental'
-        and not dbt_snowflake_monitoring.custom_should_full_refresh(node)
+        and dbt_snowflake_monitoring.custom_should_full_refresh(node)
     ) }}
 {% endmacro %}
 
