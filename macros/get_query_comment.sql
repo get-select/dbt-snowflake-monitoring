@@ -18,7 +18,7 @@
 {% macro get_query_comment(node) %}
 {%- set comment_dict = {} -%}
 {%- do comment_dict.update(
-    dbt_snowflake_monitoring_version='1.6.1',
+    dbt_snowflake_monitoring_version='1.6.2',
     app='dbt',
     dbt_version=dbt_version,
     target_name=target.name,

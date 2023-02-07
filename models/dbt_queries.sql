@@ -25,6 +25,7 @@ select
     dbt_metadata['dbt_cloud_run_reason_category']::string as dbt_cloud_run_reason_category,
     dbt_metadata['dbt_cloud_run_reason']::string as dbt_cloud_run_reason,
     min(start_time) over (partition by dbt_invocation_id, dbt_node_id order by start_time asc) as node_start_time,
+    coalesce(dbt_metadata['dbt_snowflake_monitoring_version']::string, '<1.6.2') as dbt_snowflake_monitoring_version,
     {% if var('dbt_cloud_account_id', none) -%}
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/jobs/' || dbt_cloud_job_id as dbt_cloud_job_url,
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/runs/' || dbt_cloud_run_id as dbt_cloud_run_url,
