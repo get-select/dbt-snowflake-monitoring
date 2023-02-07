@@ -52,6 +52,12 @@
 {%- endif -%}
 {%- if node is not none -%}
   {%- do comment_dict.update(
+    node_name=node.name,
+    node_alias=node.alias,
+    node_package_name=node.package_name,
+    node_original_file_path=node.original_file_path,
+    node_database=node.database,
+    node_schema=node.schema,
     node_id=node.unique_id,
     node_resource_type=node.resource_type
   ) -%}
