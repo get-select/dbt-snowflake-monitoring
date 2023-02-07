@@ -3,7 +3,7 @@
 {% macro custom_is_incremental(node) %}
     {{ return(
         node.config.materialized == 'incremental'
-        and dbt_snowflake_monitoring.custom_should_full_refresh(node)
+        and not dbt_snowflake_monitoring.custom_should_full_refresh(node)
     ) }}
 {% endmacro %}
 
@@ -18,6 +18,7 @@
 {% macro get_query_comment(node) %}
 {%- set comment_dict = {} -%}
 {%- do comment_dict.update(
+    dbt_snowflake_monitoring_version='1.6.1',
     app='dbt',
     dbt_version=dbt_version,
     target_name=target.name,
