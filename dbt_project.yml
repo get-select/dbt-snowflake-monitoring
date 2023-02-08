@@ -9,3 +9,6 @@ model-paths: ["models"]
 clean-targets:
   - target
   - dbt_packages
+
+models:
+  +on_schema_change: "append_new_columns"

@@ -7,7 +7,7 @@ select
     dbt_metadata['invocation_id']::string as dbt_invocation_id,
     dbt_metadata['node_id']::string as dbt_node_id,
     dbt_metadata['node_resource_type']::string as dbt_node_resource_type,
-    coalesce(dbt_metadata['node_name']::string, replace(array_slice(split(dbt_node_id, '.'), -1, array_size(split(dbt_node_id, '.')))[0], '"')) as dbt_node_name, -- we can just use node_name after a couple of months
+    coalesce(dbt_metadata['node_name']::string, replace(array_slice(split(dbt_node_id, '.'), -1, array_size(split(dbt_node_id, '.')))[0], '"')) as dbt_node_name, -- we can just use node_name once enough time has been that users have migrated to v2.0.0
     dbt_metadata['materialized']::string as dbt_node_materialized,
     dbt_metadata['is_incremental']::string as dbt_node_is_incremental,
     dbt_metadata['node_alias']::string as dbt_node_alias,
@@ -25,7 +25,7 @@ select
     dbt_metadata['dbt_cloud_run_reason_category']::string as dbt_cloud_run_reason_category,
     dbt_metadata['dbt_cloud_run_reason']::string as dbt_cloud_run_reason,
     min(start_time) over (partition by dbt_invocation_id, dbt_node_id order by start_time asc) as node_start_time,
-    coalesce(dbt_metadata['dbt_snowflake_monitoring_version']::string, '<1.6.2') as dbt_snowflake_monitoring_version,
+    dbt_metadata['dbt_snowflake_query_tags_version']::string as dbt_snowflake_query_tags_version, -- this will be null where the metadata came from a query comment in dbt-snowflake-monitoring versions <2.0.0
     {% if var('dbt_cloud_account_id', none) -%}
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/jobs/' || dbt_cloud_job_id as dbt_cloud_job_url,
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/runs/' || dbt_cloud_run_id as dbt_cloud_run_url,
