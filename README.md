@@ -18,12 +18,16 @@ packages:
     version: 1.6.2
 ```
 
-To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, add the following to `dbt_project.yml`:
+To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, create a new macro named `query_tags.sql` in your `macros` folder. Add the following to the file:
 
-```yaml
-query-comment:
-  comment: '{{ dbt_snowflake_monitoring.get_query_comment(node) }}'
-  append: true # Snowflake removes prefixed comments.
+```sql
+{% macro set_query_tag() -%}
+{% do return(dbt_snowflake_monitoring.set_query_tag()) %}
+{% endmacro %}
+
+{% macro unset_query_tag(original_query_tag) -%}
+{% do return(dbt_snowflake_monitoring.unset_query_tag(original_query_tag)) %}
+{% endmacro %}
 ```
 
 To generate URLs to dbt Cloud jobs and runs in the `dbt_queries` model, add the following variable to `dbt_project.yml`:

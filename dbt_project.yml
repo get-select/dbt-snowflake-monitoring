@@ -6,10 +6,6 @@ profile: dbt_snowflake_monitoring
 
 model-paths: ["models"]
 
-query-comment:
-  comment: '{{ dbt_snowflake_monitoring.get_query_comment(node) }}'
-  append: true # Snowflake removes prefixed comments.
-
 clean-targets:
   - target
   - dbt_packages
