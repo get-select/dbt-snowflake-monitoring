@@ -15,7 +15,7 @@ Add the following to your `packages.yml` file:
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 1.6.2
+    version: 2.0.0
 ```
 
 To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, create a new macro named `query_tags.sql` in your `macros` folder. Add the following to the file:
