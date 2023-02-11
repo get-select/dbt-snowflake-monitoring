@@ -11,6 +11,7 @@ select
     dbt_metadata['materialized']::string as dbt_node_materialized,
     dbt_metadata['is_incremental']::boolean as dbt_node_is_incremental,
     dbt_metadata['node_alias']::string as dbt_node_alias,
+    dbt_metadata['node_refs']::array as dbt_node_refs,
     dbt_metadata['node_database']::string as dbt_node_database,
     dbt_metadata['node_schema']::string as dbt_node_schema,
     dbt_metadata['dbt_version']::string as dbt_version,
