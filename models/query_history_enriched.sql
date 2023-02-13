@@ -10,10 +10,13 @@ query_history as (
         *,
 
         -- this removes comments enclosed by /* <comment text> */ and single line comments starting with -- and either ending with a new line or end of string
-        {{ target.database }}.{{ target.schema }}.dbt_snowflake_monitoring_regexp_replace(query_text, $$(/\*(.|\n)+?\*/)|(--.*$)|(--.*\n)$$, '') as query_text_no_comments,
+        {{ target.database }}.{{ target.schema }}.dbt_snowflake_monitoring_regexp_replace(query_text, $$(/\*(.|\n|\r)*?\*/)|(--.*$)|(--.*(\n|\r))$$, '') as query_text_no_comments,
 
         regexp_substr(query_text, '/\\*\\s({"app":\\s"dbt".*})\\s\\*/', 1, 1, 'ie') as _dbt_json_meta,
-        try_parse_json(_dbt_json_meta) as dbt_metadata
+        case
+            when try_parse_json(query_tag)['dbt_snowflake_query_tags_version'] is not null then try_parse_json(query_tag)
+            else try_parse_json(_dbt_json_meta)
+        end as dbt_metadata
 
     from {{ ref('stg_query_history') }}
 

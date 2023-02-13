@@ -12,9 +12,12 @@ clean-targets:
   - target
   - dbt_packages
 
-query-comment:
-  comment: '{{ dbt_snowflake_monitoring.get_query_comment(node) }}'
-  append: true # Snowflake removes prefixed comments.
+dispatch:
+  - macro_namespace: dbt
+    search_order:
+      - dbt_snowflake_monitoring_tests
+      - dbt_snowflake_monitoring
+      - dbt
 
 vars:
   account_locator: a09e1

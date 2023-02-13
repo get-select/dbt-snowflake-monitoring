@@ -15,32 +15,35 @@ Add the following to your `packages.yml` file:
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 1.6.1
+    version: 2.0.0
 ```
 
-To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, add the following to `dbt_project.yml`:
+To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query tags are added to all dbt-issued queries. To configure the tags, follow one of the two options below.
+
+Option 1: If running dbt < 1.2, create a folder named `macros` in your dbt project's top level directory (if it doesn't exist). Inside, make a new file called `query_tags.sql` with the following content:
+
+```sql
+{% macro set_query_tag() -%}
+{% do return(dbt_snowflake_monitoring.set_query_tag()) %}
+{% endmacro %}
+
+{% macro unset_query_tag(original_query_tag) -%}
+{% do return(dbt_snowflake_monitoring.unset_query_tag(original_query_tag)) %}
+{% endmacro %}
+```
+
+Option 2: If running dbt >= 1.2, you can simply configure the dispatch search order in your `dbt_project.yml`.
 
 ```yaml
-query-comment:
-  comment: '{{ dbt_snowflake_monitoring.get_query_comment(node) }}'
-  append: true # Snowflake removes prefixed comments.
+dispatch:
+  - macro_namespace: dbt
+    search_order:
+      - <YOUR_PROJECT_NAME>
+      - dbt_snowflake_monitoring
+      - dbt
 ```
 
-The generate URLs to dbt Cloud jobs and runs in the `dbt_queries` model, add the following variable to `dbt_project.yml`:
-```yaml
-vars:
-  dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/deploy/<this_number>/projects/<not_this_number>/jobs
-```
-
-### Only want to use the get_query_comment macro?
-
-If you only want to use the `get_query_comment` macro, and don't want to run the models, you can exclude them from running by adding the following to your `dbt_project.yml`:
-
-```yaml
-models:
-  dbt_snowflake_monitoring:
-    +enabled: false
-```
+That's it! All dbt-issued queries will now be tagged and start appearing in the `dbt_queries.sql` model.
 
 ## Package Alternatives & Maintenance
 
@@ -86,15 +89,6 @@ We use changie to generate CHANGELOG entries. Note: Do not edit the CHANGELOG.md
 Follow the steps to [install changie](https://changie.dev/guide/installation/) for your system.
 
 Once changie is installed and your PR is created, simply run `changie new` and changie will walk you through the process of creating a changelog entry. Commit the file that's created and your changelog entry is complete!
-
-### Developing the package
-
-Simply treat this package like a dbt project. From the top level of the repo, you can run:
-```
-dbt build
-```
-
-and any other dbt command.
 
 ### SQLFluff
 
