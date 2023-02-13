@@ -18,7 +18,11 @@ packages:
     version: 2.0.0
 ```
 
-To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, create a new macro named `query_tags.sql` in your `macros` folder. Add the following to the file:
+To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query tags are added to all dbt-issued queries. To configure the tags:
+
+ create a new macro named `query_tags.sql` in your `macros` folder. Add the following to the file:
+
+Option 1: If running dbt < 1.2, create a folder named `macros` in your dbt project's top level directory (if it doesn't exist). Inside, make a new file called `query_tags.sql` with the following content:
 
 ```sql
 {% macro set_query_tag() -%}
@@ -30,21 +34,18 @@ To attribute costs to individual models via the `dbt_metadata` column in the `qu
 {% endmacro %}
 ```
 
-To generate URLs to dbt Cloud jobs and runs in the `dbt_queries` model, add the following variable to `dbt_project.yml`:
-```yaml
-vars:
-  dbt_cloud_account_id: 12345 # https://cloud.getdbt.com/deploy/<this_number>/projects/<not_this_number>/jobs
-```
-
-### Only want to use the get_query_comment macro?
-
-If you only want to use the `get_query_comment` macro, and don't want to run the models, you can exclude them from running by adding the following to your `dbt_project.yml`:
+Option 2: If running dbt >= 1.2, you can simply configure the dispatch search order in your `dbt_project.yml`.
 
 ```yaml
-models:
-  dbt_snowflake_monitoring:
-    +enabled: false
+dispatch:
+  - macro_namespace: dbt
+    search_order:
+      - <YOUR_PROJECT_NAME>
+      - dbt_snowflake_monitoring
+      - dbt
 ```
+
+That's it! All dbt-issued queries will now be tagged and start appearing in the `dbt_queries.sql` model.
 
 ## Package Alternatives & Maintenance
 

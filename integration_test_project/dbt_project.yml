@@ -12,5 +12,13 @@ clean-targets:
   - target
   - dbt_packages
 
+
+dispatch:
+  - macro_namespace: dbt
+    search_order:
+      - dbt_snowflake_monitoring_tests
+      - dbt_snowflake_monitoring
+      - dbt
+
 vars:
   account_locator: a09e1
