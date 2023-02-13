@@ -12,7 +12,6 @@ clean-targets:
   - target
   - dbt_packages
 
-
 dispatch:
   - macro_namespace: dbt
     search_order:

@@ -4,6 +4,7 @@
 ) }}
 
 select
+    dbt_metadata['dbt_snowflake_query_tags_version']::string as dbt_snowflake_query_tags_version, -- this will be null where the metadata came from a query comment in dbt-snowflake-monitoring versions <2.0.0
     dbt_metadata['invocation_id']::string as dbt_invocation_id,
     dbt_metadata['node_id']::string as dbt_node_id,
     dbt_metadata['node_resource_type']::string as dbt_node_resource_type,
@@ -11,7 +12,7 @@ select
     dbt_metadata['materialized']::string as dbt_node_materialized,
     dbt_metadata['is_incremental']::boolean as dbt_node_is_incremental,
     dbt_metadata['node_alias']::string as dbt_node_alias,
-    dbt_metadata['node_refs']::array as dbt_node_refs,
+    iff(dbt_snowflake_query_tags_version >= '1.1.3', dbt_metadata['node_refs']::array, []) as dbt_node_refs, -- correct refs available from 1.1.3 onwards
     dbt_metadata['node_database']::string as dbt_node_database,
     dbt_metadata['node_schema']::string as dbt_node_schema,
     dbt_metadata['dbt_version']::string as dbt_version,
@@ -27,7 +28,6 @@ select
     dbt_metadata['dbt_cloud_run_reason_category']::string as dbt_cloud_run_reason_category,
     dbt_metadata['dbt_cloud_run_reason']::string as dbt_cloud_run_reason,
     min(start_time) over (partition by dbt_invocation_id, dbt_node_id order by start_time asc) as node_start_time,
-    dbt_metadata['dbt_snowflake_query_tags_version']::string as dbt_snowflake_query_tags_version, -- this will be null where the metadata came from a query comment in dbt-snowflake-monitoring versions <2.0.0
     {% if var('dbt_cloud_account_id', none) -%}
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/jobs/' || dbt_cloud_job_id as dbt_cloud_job_url,
     'https://cloud.getdbt.com/next/deploy/' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/runs/' || dbt_cloud_run_id as dbt_cloud_run_url,
