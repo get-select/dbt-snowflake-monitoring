@@ -3,10 +3,10 @@ version: 2
 sources:
   - name: snowflake_account_usage
     overrides: dbt_snowflake_monitoring
-    database: dbt_ci
-    schema: mock_data
+    database: '{{ env_var("SOURCE_DATABASE_OVERRIDE", "snowflake") }}'
+    schema: '{{ env_var("SOURCE_SCHEMA_OVERRIDE", "account_usage") }}'
 
   - name: snowflake_organization_usage
     overrides: dbt_snowflake_monitoring
-    database: dbt_ci
-    schema: mock_data
+    database: '{{ env_var("SOURCE_DATABASE_OVERRIDE", "snowflake") }}'
+    schema: '{{ env_var("SOURCE_SCHEMA_OVERRIDE", "organization_usage") }}'

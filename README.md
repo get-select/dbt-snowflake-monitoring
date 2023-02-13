@@ -92,15 +92,6 @@ Follow the steps to [install changie](https://changie.dev/guide/installation/) f
 
 Once changie is installed and your PR is created, simply run `changie new` and changie will walk you through the process of creating a changelog entry. Commit the file that's created and your changelog entry is complete!
 
-### Developing the package
-
-Simply treat this package like a dbt project. From the top level of the repo, you can run:
-```
-dbt build
-```
-
-and any other dbt command.
-
 ### SQLFluff
 
 We use SQLFluff to keep SQL style consistent. By installing `pre-commit` per the initial setup guide above, SQLFluff will run automatically when you make a commit locally. A GitHub action automatically tests pull requests and adds annotations where there are failures.
