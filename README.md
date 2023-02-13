@@ -18,9 +18,7 @@ packages:
     version: 2.0.0
 ```
 
-To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query tags are added to all dbt-issued queries. To configure the tags:
-
- create a new macro named `query_tags.sql` in your `macros` folder. Add the following to the file:
+To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query tags are added to all dbt-issued queries. To configure the tags, follow one of the two options below.
 
 Option 1: If running dbt < 1.2, create a folder named `macros` in your dbt project's top level directory (if it doesn't exist). Inside, make a new file called `query_tags.sql` with the following content:
 
