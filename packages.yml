@@ -1,5 +1,5 @@
 packages:
   - package: dbt-labs/dbt_utils
     version: [">=0.8.0", "<2.0.0"]
-  - git: https://github.com/get-select/dbt-snowflake-query-tags.git
+  - git: get-select/dbt_snowflake_query_tags
     revision: 1.1.3
