@@ -59,7 +59,8 @@ storage_spend_daily as (
         storage_terabytes_daily.storage_type,
         null as warehouse_name,
         storage_terabytes_daily.database_name,
-        coalesce(sum(div0(storage_terabytes_daily.storage_terabytes, dates.days_in_month) * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(div0(storage_terabytes_daily.storage_terabytes, dates.days_in_month) * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join storage_terabytes_daily on dates.date = storage_terabytes_daily.date
     inner join {{ ref('daily_rates') }}
@@ -76,7 +77,8 @@ compute_spend_daily as (
         null as storage_type,
         stg_metering_history.name as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used_compute * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used_compute * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
@@ -95,7 +97,8 @@ serverless_task_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         stg_serverless_task_history.database_name,
-        coalesce(sum(stg_serverless_task_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_serverless_task_history.credits_used * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_serverless_task_history') }} on
         dates.date = convert_timezone('UTC', stg_serverless_task_history.start_time)::date
@@ -113,7 +116,8 @@ adj_for_incl_cloud_services_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_daily_history.credits_adjustment_cloud_services * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_daily_history.credits_adjustment_cloud_services * daily_rates.effective_rate), 0) as spend,
+        0 as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_daily_history') }} on
         dates.date = stg_metering_daily_history.date
@@ -124,14 +128,15 @@ adj_for_incl_cloud_services_daily as (
     group by 1, 2, 3, 4
 ),
 
-cloud_services_spend_daily as (
+_cloud_services_spend_daily as (
     select
         dates.date,
         'Cloud Services' as service,
         null as storage_type,
         case when stg_metering_history.name = 'CLOUD_SERVICES_ONLY' then 'Cloud Services Only' else stg_metering_history.name end as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used_cloud_services * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used_cloud_services), 0) as credits_used_cloud_services,
+        any_value(daily_rates.effective_rate) as effective_rate
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
@@ -143,6 +148,33 @@ cloud_services_spend_daily as (
     group by 1, 2, 3, 4
 ),
 
+
+credits_billed_daily as (
+    select
+        convert_timezone('UTC', stg_metering_history.start_time)::date as date,
+        sum(credits_used_compute) as daily_credits_used_compute,
+        sum(credits_used_cloud_services) as daily_credits_used_cloud_services,
+        greatest(daily_credits_used_cloud_services - daily_credits_used_compute * 0.1, 0) as daily_billable_cloud_services
+    from {{ ref('stg_metering_history') }}
+    group by 1
+),
+
+cloud_services_spend_daily as (
+    select
+        _cloud_services_spend_daily.date,
+        _cloud_services_spend_daily.service,
+        _cloud_services_spend_daily.storage_type,
+        _cloud_services_spend_daily.warehouse_name,
+        _cloud_services_spend_daily.database_name,
+        _cloud_services_spend_daily.credits_used_cloud_services*_cloud_services_spend_daily.effective_rate as spend,
+
+        (div0(_cloud_services_spend_daily.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * _cloud_services_spend_daily.effective_rate as spend_net_cloud_services
+    from _cloud_services_spend_daily
+    inner join credits_billed_daily on
+         _cloud_services_spend_daily.date=credits_billed_daily.date
+
+)
+
 automatic_clustering_spend_daily as (
     select
         dates.date,
@@ -150,7 +182,8 @@ automatic_clustering_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
@@ -169,7 +202,8 @@ materialized_view_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
@@ -188,7 +222,8 @@ snowpipe_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
@@ -207,7 +242,8 @@ query_acceleration_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
@@ -226,7 +262,8 @@ replication_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
@@ -245,7 +282,8 @@ search_optimization_spend_daily as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend
+        coalesce(sum(stg_metering_history.credits_used * daily_rates.effective_rate), 0) as spend,
+        spend as spend_net_cloud_services
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone('UTC', stg_metering_history.start_time)::date
