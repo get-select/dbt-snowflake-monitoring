@@ -6,7 +6,7 @@ with date_spine as (
 {% set stg_warehouse_metering_history_relation = load_relation(ref('stg_warehouse_metering_history')) %}
         {% if stg_warehouse_metering_history_relation %}
             {% set results = run_query("select dateadd(day, 1, timestampadd(hour, -1, convert_timezone('UTC', min(start_time)))::date) from " ~ ref('stg_warehouse_metering_history')) %} {# first complete day #} -- noqa
-            {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
+{% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
         {% else %}
             {% set start_date = "dateadd(day, -1, convert_timezone('UTC', current_timestamp)::date)" %} {# this is just a dummy date for initial compilations before stg_warehouse_metering_history exists #}
         {% endif %}
@@ -151,7 +151,7 @@ _cloud_services_spend_daily as (
 
 credits_billed_daily as (
     select
-        convert_timezone('UTC', stg_metering_history.start_time)::date as date,
+        convert_timezone('UTC', start_time)::date as date,
         sum(credits_used_compute) as daily_credits_used_compute,
         sum(credits_used_cloud_services) as daily_credits_used_cloud_services,
         greatest(daily_credits_used_cloud_services - daily_credits_used_compute * 0.1, 0) as daily_billable_cloud_services
@@ -166,14 +166,14 @@ cloud_services_spend_daily as (
         _cloud_services_spend_daily.storage_type,
         _cloud_services_spend_daily.warehouse_name,
         _cloud_services_spend_daily.database_name,
-        _cloud_services_spend_daily.credits_used_cloud_services*_cloud_services_spend_daily.effective_rate as spend,
+        _cloud_services_spend_daily.credits_used_cloud_services * _cloud_services_spend_daily.effective_rate as spend,
 
         (div0(_cloud_services_spend_daily.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * _cloud_services_spend_daily.effective_rate as spend_net_cloud_services
     from _cloud_services_spend_daily
     inner join credits_billed_daily on
-         _cloud_services_spend_daily.date=credits_billed_daily.date
+         _cloud_services_spend_daily.date = credits_billed_daily.date
 
-)
+),
 
 automatic_clustering_spend_daily as (
     select
