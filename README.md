@@ -15,7 +15,7 @@ Add the following to your `packages.yml` file:
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 2.0.0
+    version: 2.0.1
 ```
 
 To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query tags are added to all dbt-issued queries. To configure the tags, follow one of the two options below.
