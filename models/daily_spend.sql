@@ -148,14 +148,14 @@ _cloud_services_spend_daily as (
     group by 1, 2, 3, 4
 ),
 
-
 credits_billed_daily as (
     select
-        convert_timezone('UTC', start_time)::date as date,
-        sum(credits_used_compute) as daily_credits_used_compute,
+        date,
         sum(credits_used_cloud_services) as daily_credits_used_cloud_services,
-        greatest(daily_credits_used_cloud_services - daily_credits_used_compute * 0.1, 0) as daily_billable_cloud_services
-    from {{ ref('stg_metering_history') }}
+        sum(credits_used_cloud_services + credits_adjustment_cloud_services) as daily_billable_cloud_services
+    from {{ ref('stg_metering_daily_history') }}
+    where
+        service_type = 'WAREHOUSE_METERING'
     group by 1
 ),
 
