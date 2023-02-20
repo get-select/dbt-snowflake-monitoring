@@ -1,7 +1,7 @@
 {{ config(
     materialized='incremental',
     unique_key=['query_id', 'start_time'],
-    pre_hook="{{ create_regexp_replace_udf() }}"
+    pre_hook="{{ create_regexp_replace_udf(this) }}"
 ) }}
 
 with
@@ -10,7 +10,7 @@ query_history as (
         *,
 
         -- this removes comments enclosed by /* <comment text> */ and single line comments starting with -- and either ending with a new line or end of string
-        {{ target.database }}.{{ target.schema }}.dbt_snowflake_monitoring_regexp_replace(query_text, $$(/\*(.|\n|\r)*?\*/)|(--.*$)|(--.*(\n|\r))$$, '') as query_text_no_comments,
+        {{ this.database }}.{{ this.schema }}.dbt_snowflake_monitoring_regexp_replace(query_text, $$(/\*(.|\n|\r)*?\*/)|(--.*$)|(--.*(\n|\r))$$, '') as query_text_no_comments,
 
         regexp_substr(query_text, '/\\*\\s({"app":\\s"dbt".*})\\s\\*/', 1, 1, 'ie') as _dbt_json_meta,
         case
