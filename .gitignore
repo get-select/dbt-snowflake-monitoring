@@ -3,3 +3,4 @@ dbt_packages/
 logs/
 logfile
 .DS_Store
+env.sh

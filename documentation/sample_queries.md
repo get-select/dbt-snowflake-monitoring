@@ -29,12 +29,11 @@ This query uses the `daily_spend` model to explore spend by warehouse name. Some
 ```sql
 select
     date_trunc(month, date)::date as month,
-    service,
     warehouse_name,
-    sum(spend)
+    sum(spend_net_cloud_services) as spend
 from daily_spend
-where service in ('Compute', 'Cloud Services', 'Adj For Incl Cloud Services')
-group by 1, 2, 3
+where service in ('Compute', 'Cloud Services')
+group by 1, 2
 ```
 
 ## Storage Costs
