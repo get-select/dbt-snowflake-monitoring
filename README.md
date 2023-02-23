@@ -4,21 +4,23 @@ From the [SELECT](https://select.dev) team, a dbt package to help you monitor Sn
 
 ## Quickstart
 
-Grant dbt's role access to the `snowflake` database:
+1. Grant dbt's role access to the `snowflake` database:
 
 ```sql
 grant imported privileges on database snowflake to role your_dbt_role_name;
 ```
 
-Add the following to your `packages.yml` file:
+2. Add the package to your `packages.yml` file:
 
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 2.0.2
+    version: 3.0.0
 ```
 
-To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query tags are added to all dbt-issued queries. To configure the tags, follow one of the two options below.
+3. To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query comments and tags are added to all dbt-issued queries. Both query comments and tags are needed to collect the required metadata for the `dbt_queries` model.
+
+To add the query tags follow one of these two options:
 
 Option 1: If running dbt < 1.2, create a folder named `macros` in your dbt project's top level directory (if it doesn't exist). Inside, make a new file called `query_tags.sql` with the following content:
 
@@ -32,7 +34,7 @@ Option 1: If running dbt < 1.2, create a folder named `macros` in your dbt proje
 {% endmacro %}
 ```
 
-Option 2: If running dbt >= 1.2, you can simply configure the dispatch search order in your `dbt_project.yml`.
+Option 2: If running dbt >= 1.2, simply configure the dispatch search order in `dbt_project.yml`.
 
 ```yaml
 dispatch:
@@ -41,6 +43,14 @@ dispatch:
       - <YOUR_PROJECT_NAME>
       - dbt_snowflake_monitoring
       - dbt
+```
+
+4. To configure the query comments, add the following config to `dbt_project.yml`.
+
+```yaml
+query-comment:
+  comment: '{{ dbt_snowflake_query_tags.get_query_comment(node) }}'
+  append: true # Snowflake removes prefixed comments.
 ```
 
 That's it! All dbt-issued queries will now be tagged and start appearing in the `dbt_queries.sql` model.
