@@ -49,7 +49,7 @@ dispatch:
 
 ```yaml
 query-comment:
-  comment: '{{ dbt_snowflake_query_tags.get_query_comment(node) }}'
+  comment: '{{ dbt_snowflake_monitoring.get_query_comment(node) }}'
   append: true # Snowflake removes prefixed comments.
 ```
 
