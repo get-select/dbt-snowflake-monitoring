@@ -55,6 +55,12 @@ query-comment:
 
 That's it! All dbt-issued queries will now be tagged and start appearing in the `dbt_queries.sql` model.
 
+### dbt Cloud URLs
+
+If you're using dbt Cloud, columns `dbt_cloud_job_url` and `dbt_cloud_run_url` can be configured in the `dbt_queries` model. To do so, set the variable `dbt_cloud_account_id`. This id can be retrieved from in between `/deploy/` and `/projects/` in any dbt Cloud URL.
+
+By default, the URL prefix of `https://cloud.getdbt.com/deploy/` is used. If you're using a different region of dbt Cloud, this prefix can be overridden by specifying the `dbt_cloud_url` variable.
+
 ## Package Alternatives & Maintenance
 
 Prior to releasing this package, [snowflake-spend](https://gitlab.com/gitlab-data/snowflake_spend) by the Gitlab data team was the only package available for monitoring Snowflake spend. According to their README, the package is currently maintained by the Gitlab data team, but there does not appear to be any active development in it (as of January 2023).
