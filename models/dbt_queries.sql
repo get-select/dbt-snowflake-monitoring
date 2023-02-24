@@ -12,6 +12,7 @@ select
     dbt_metadata['materialized']::string as dbt_node_materialized,
     dbt_metadata['is_incremental']::boolean as dbt_node_is_incremental,
     dbt_metadata['node_alias']::string as dbt_node_alias,
+    dbt_metadata['node_tags']::array as node_tags,
     iff(dbt_snowflake_query_tags_version >= '1.1.3', dbt_metadata['node_refs']::array, []) as dbt_node_refs, -- correct refs available from 1.1.3 onwards
     dbt_metadata['node_database']::string as dbt_node_database,
     dbt_metadata['node_schema']::string as dbt_node_schema,
@@ -45,7 +46,6 @@ select
             'Required dbt_cloud_account_id variable not set' -- noqa
             {%- endif %}
     end as dbt_cloud_run_url,
-    min(start_time) over (partition by dbt_invocation_id, dbt_node_id order by start_time asc) as node_start_time,
     * exclude dbt_metadata
 from {{ ref('query_history_enriched') }}
 where dbt_metadata is not null

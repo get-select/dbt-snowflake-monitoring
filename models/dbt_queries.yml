@@ -4,24 +4,44 @@ models:
   - name: dbt_queries
     description: Filtered version of query_history_enriched just for queries issued by dbt. Adds additional dbt-specific columns.
     columns:
-      - name: dbt_version
-        description: Version of dbt in use.
-      - name: dbt_target_name
-        description: The target name for the dbt invocation.
-      - name: dbt_target_database
-        description: The target database for the dbt invocation.
-      - name: dbt_target_schema
-        description: The target schema for the dbt invocation.
+      - name: dbt_snowflake_query_tags_version
+        description: Version of the dbt-snowflake-query-tags package that generated the metadata
       - name: dbt_invocation_id
         description: The id of the dbt invocation.
       - name: dbt_node_id
         description: The identifier for the node that the query relates to.
       - name: dbt_node_resource_type
         description: The resource type of the node that the query relates to.
+      - name: dbt_node_name
+        description: The name of the node that the query relates to.
       - name: dbt_node_materialized
         description: The materialization of the node that the query relates to.
       - name: dbt_node_is_incremental
-        description: The materialization of the node that the query relates to.
+        description: Boolean describing if the node run was incremental.
+      - name: dbt_node_alias
+        description: Alias set for the node.
+      - name: dbt_node_tags
+        description: Array of all tags set for the node.
+      - name: dbt_node_refs
+        description: Array of all refs used by the node.
+      - name: dbt_node_database
+        description: The database configured for the node.
+      - name: dbt_node_schema
+        description: The schema configured for the node.
+      - name: dbt_version
+        description: Version of dbt in use.
+      - name: dbt_project_name
+        description: Name of the dbt project.
+      - name: dbt_target_name
+        description: The target name for the dbt invocation.
+      - name: dbt_target_database
+        description: The target database for the dbt invocation.
+      - name: dbt_target_schema
+        description: The target schema for the dbt invocation.
+      - name: dbt_node_package_name
+        description: The package name of the dbt node.
+      - name: dbt_node_original_file_path
+        description: The file path of the dbt node.
       - name: dbt_cloud_project_id
         description: If using dbt Cloud, the ID of the project.
       - name: dbt_cloud_job_id
