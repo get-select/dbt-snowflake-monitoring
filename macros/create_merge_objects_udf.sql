@@ -6,7 +6,7 @@ language javascript
 comment = 'Created by dbt-snowflake-monitoring dbt package.'
 as
 $$
-    return x = Object.assign(obj1, obj2)
+    return x = Object.assign(OBJ1, OBJ2)
 $$
 
 {% endmacro %}
