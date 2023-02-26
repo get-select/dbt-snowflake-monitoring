@@ -1,7 +1,7 @@
 {{ config(
     materialized='incremental',
     unique_key=['query_id', 'start_time'],
-    pre_hook="{{ create_regexp_replace_udf(this) }}"
+    pre_hook=["{{ create_regexp_replace_udf(this) }}", "{{ create_merge_objects_udf(this) }}"]
 ) }}
 
 with
@@ -12,10 +12,13 @@ query_history as (
         -- this removes comments enclosed by /* <comment text> */ and single line comments starting with -- and either ending with a new line or end of string
         {{ this.database }}.{{ this.schema }}.dbt_snowflake_monitoring_regexp_replace(query_text, $$(/\*(.|\n|\r)*?\*/)|(--.*$)|(--.*(\n|\r))$$, '') as query_text_no_comments,
 
-        regexp_substr(query_text, '/\\*\\s({"app":\\s"dbt".*})\\s\\*/', 1, 1, 'ie') as _dbt_json_meta,
+        try_parse_json(regexp_substr(query_text, '/\\*\\s({"app":\\s"dbt".*})\\s\\*/', 1, 1, 'ie')) as _dbt_json_comment_meta,
         case
             when try_parse_json(query_tag)['dbt_snowflake_query_tags_version'] is not null then try_parse_json(query_tag)
-            else try_parse_json(_dbt_json_meta)
+        end as _dbt_json_query_tag_meta,
+        case
+            when _dbt_json_comment_meta is not null or _dbt_json_query_tag_meta is not null then
+                {{ this.database }}.{{ this.schema }}.merge_objects(coalesce(_dbt_json_comment_meta, {}), coalesce(_dbt_json_query_tag_meta, {}))
         end as dbt_metadata
 
     from {{ ref('stg_query_history') }}
