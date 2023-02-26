@@ -18,11 +18,20 @@ packages:
     version: 3.0.0
 ```
 
-3. To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query comments and tags are added to all dbt-issued queries. Both query comments and tags are needed to collect the required metadata for the `dbt_queries` model.
+3. To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query comments and tags are added to all dbt-issued queries. Both query comments and tags are needed to collect the required metadata for the `dbt_queries` model. To add the query tags follow one of these two options:
 
-To add the query tags follow one of these two options:
+Option 1: If running dbt >= 1.2, simply configure the dispatch search order in `dbt_project.yml`.
 
-Option 1: If running dbt < 1.2, create a folder named `macros` in your dbt project's top level directory (if it doesn't exist). Inside, make a new file called `query_tags.sql` with the following content:
+```yaml
+dispatch:
+  - macro_namespace: dbt
+    search_order:
+      - <YOUR_PROJECT_NAME>
+      - dbt_snowflake_monitoring
+      - dbt
+```
+
+Option 2: If running dbt < 1.2, create a folder named `macros` in your dbt project's top level directory (if it doesn't exist). Inside, make a new file called `query_tags.sql` with the following content:
 
 ```sql
 {% macro set_query_tag() -%}
@@ -32,17 +41,6 @@ Option 1: If running dbt < 1.2, create a folder named `macros` in your dbt proje
 {% macro unset_query_tag(original_query_tag) -%}
 {% do return(dbt_snowflake_monitoring.unset_query_tag(original_query_tag)) %}
 {% endmacro %}
-```
-
-Option 2: If running dbt >= 1.2, simply configure the dispatch search order in `dbt_project.yml`.
-
-```yaml
-dispatch:
-  - macro_namespace: dbt
-    search_order:
-      - <YOUR_PROJECT_NAME>
-      - dbt_snowflake_monitoring
-      - dbt
 ```
 
 4. To configure the query comments, add the following config to `dbt_project.yml`.
