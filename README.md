@@ -69,7 +69,7 @@ The `dbt-snowflake-monitoring` package is actively developed & maintained by the
 
 ### Sample Queries
 
-See [sample_queries.md](/documentation/sample_queries.md)
+See [sample_queries.md](https://github.com/get-select/dbt-snowflake-monitoring/blob/main/documentation/sample_queries.md)
 
 ## Contributing
 
