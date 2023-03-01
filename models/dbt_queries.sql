@@ -32,7 +32,7 @@ select
         when dbt_cloud_project_id is not null
         then
             {% if var('dbt_cloud_account_id', none) -%}
-            var('dbt_cloud_url', 'https://cloud.getdbt.com/deploy/') || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/jobs/' || dbt_cloud_job_id
+            '{{ var('dbt_cloud_url', 'https://cloud.getdbt.com/deploy/') }}' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/jobs/' || dbt_cloud_job_id
             {%- else -%}
             'Required dbt_cloud_account_id variable not set' -- noqa
             {%- endif %}
@@ -41,7 +41,7 @@ select
         when dbt_cloud_project_id is not null
         then
             {% if var('dbt_cloud_account_id', none) -%}
-            var('dbt_cloud_url', 'https://cloud.getdbt.com/deploy/') || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/runs/' || dbt_cloud_run_id
+            '{{ var('dbt_cloud_url', 'https://cloud.getdbt.com/deploy/') }}' || '{{ var('dbt_cloud_account_id') }}' || '/projects/' || dbt_cloud_project_id || '/runs/' || dbt_cloud_run_id
             {%- else -%}
             'Required dbt_cloud_account_id variable not set' -- noqa
             {%- endif %}
