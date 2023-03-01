@@ -15,7 +15,7 @@ grant imported privileges on database snowflake to role your_dbt_role_name;
 ```yaml
 packages:
   - package: get-select/dbt_snowflake_monitoring
-    version: 3.0.0
+    version: 3.0.1
 ```
 
 3. To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query comments and tags are added to all dbt-issued queries. Both query comments and tags are needed to collect the required metadata for the `dbt_queries` model. To add the query tags follow one of these two options:
