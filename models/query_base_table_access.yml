@@ -1,8 +1,8 @@
 version: 2
 
 models:
-  - name: query_direct_table_access
-    description: This model tracks the direct tables accessed by a query. It contains 1 row per query per table. It does not include tables from a data share. Access history is only available for Snowflake accounts on enterprise or higher, and therefore this model will be empty for standard accounts. See https://docs.snowflake.com/en/sql-reference/account-usage/access_history.html for more details. See https://select.dev/posts/snowflake-unused-tables#direct-versus-base-objects-accessed for more details on the difference between base versus direct tables accessed.
+  - name: query_base_table_access
+    description: This model tracks the base tables accessed by a query. It contains 1 row per query per table. It does not include tables from a data share. Access history is only available for Snowflake accounts on enterprise or higher, and therefore this model will be empty for standard accounts. See https://docs.snowflake.com/en/sql-reference/account-usage/access_history.html for more details. See https://select.dev/posts/snowflake-unused-tables#direct-versus-base-objects-accessed for more details on the difference between base versus direct tables accessed.
     columns:
       - name: _unique_id
         description: Unique identifier for each row in the table
