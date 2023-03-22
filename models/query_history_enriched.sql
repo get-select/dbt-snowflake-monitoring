@@ -18,7 +18,7 @@ query_history as (
         end as _dbt_json_query_tag_meta,
         case
             when _dbt_json_comment_meta is not null or _dbt_json_query_tag_meta is not null then
-                {{ this.database }}.{{ this.schema }}.merge_objects(coalesce(_dbt_json_comment_meta, {}), coalesce(_dbt_json_query_tag_meta, {}))
+                {{ this.database }}.{{ this.schema }}.merge_objects(coalesce(_dbt_json_comment_meta, { }), coalesce(_dbt_json_query_tag_meta, { }))
         end as dbt_metadata
 
     from {{ ref('stg_query_history') }}
