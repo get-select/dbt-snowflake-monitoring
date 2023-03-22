@@ -28,8 +28,8 @@ warehouse_snapshots as (
         lead(timestamp) over (partition by warehouse_id order by timestamp) as _valid_to
     from warehouse_snapshots_base
     where
-        warehouse_size <> coalesce(prev_warehouse_size, '')
-        or warehouse_name <> coalesce(prev_warehouse_name, '')
+        warehouse_size != coalesce(prev_warehouse_size, '')
+        or warehouse_name != coalesce(prev_warehouse_name, '')
 )
 
 select

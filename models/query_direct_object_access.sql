@@ -1,4 +1,3 @@
-
 {{ config(
     materialized='incremental',
     unique_key=['_unique_id', 'query_start_time'],

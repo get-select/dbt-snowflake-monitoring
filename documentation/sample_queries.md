@@ -54,7 +54,7 @@ group by 1, 2, 3, 4
 ```
 
 ### Unused Tables
-This query uses the `query_table_access` model (available as of 1.6.0) to identify tables which have not been queried in the last 30 days. The total storage costs of each table are also shown, which uses the account's current storage rate (usually between $20-$40 per TB per month).
+This query uses the `query_base_table_access` model (available as of 4.0.0) to identify tables which have not been queried in the last 30 days. The total storage costs of each table are also shown, which uses the account's current storage rate (usually between $20-$40 per TB per month). See [this post](https://select.dev/posts/snowflake-unused-tables#direct-versus-base-objects-accessed) for more details on the difference between base versus direct tables accessed.
 
 ```sql
 with
@@ -64,7 +64,7 @@ table_access_summary as (
         any_value(full_table_name) as full_table_name,
         count_if(query_start_time >= dateadd('day', -30, current_date)) as num_queries_last_30d,
         count_if(query_start_time >= dateadd('day', -90, current_date)) as num_queries_last_90d
-    from query_table_access
+    from query_base_table_access
     group by 1
 ),
 table_storage_metrics as (
