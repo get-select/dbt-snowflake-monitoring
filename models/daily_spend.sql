@@ -189,7 +189,7 @@ serverless_task_spend_daily as (
             and daily_rates.usage_type = 'serverless tasks'
     inner join latest_rates
         on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'compute'
+            and latest_rates.usage_type = 'serverless tasks'
     group by 1, 2, 3, 4, 5
 ),
 
