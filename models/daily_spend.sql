@@ -19,50 +19,17 @@ with date_spine as (
     }}
 ),
 
-stop_thresholds as (
-    select max(date) as stop_threshold
-    from {{ ref('stg_database_storage_usage_history') }}
-
-    union all
-
-    select max(date) as stop_threshold
-    from {{ ref('stg_stage_storage_usage_history') }}
-
-    union all
-
-    select max(date) as stop_threshold
-    from {{ ref('stg_metering_daily_history') }}
-
-    union all
-
-    select dateadd(
-            day, -1, convert_timezone('UTC', max(start_time))::date
-        ) as stop_threshold
-    from {{ ref('stg_warehouse_metering_history') }}
-
-    union all
-
-    select dateadd(
-            day, -1, convert_timezone('UTC', max(start_time))::date
-        ) as stop_threshold
-    from {{ ref('stg_serverless_task_history') }}
-
-    union all
-
-    select dateadd(
-            day, -1, convert_timezone('UTC', max(start_time))::date
-        ) as stop_threshold
-    from {{ ref('stg_metering_history') }}
-
-),
-
 dates as (
     select
         date_day as date,
         day(last_day(date_day)) as days_in_month
     from date_spine
-    -- only include dates up to the last full day of data across all inputs
-    where date_day <= (select min(stop_threshold) from stop_thresholds)
+    -- Once account_usage.metering_history has a full day of data, we assume all other sources also do
+    where
+        date_day < (
+            select convert_timezone('UTC', max(end_time))::date
+            from {{ ref('stg_metering_history') }}
+        )
 ),
 
 latest_rates as (
