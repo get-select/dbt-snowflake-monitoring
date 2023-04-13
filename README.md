@@ -18,7 +18,7 @@ packages:
     version: 4.0.2
 ```
 
-3. To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query comments and tags are added to all dbt-issued queries. Both query comments and tags are needed to collect the required metadata for the `dbt_queries` model. To add the query tags follow one of these two options:
+3. To attribute costs to individual models via the `dbt_metadata` column in the `query_history_enriched` model, query comments and tags are added to all dbt-issued queries. Both query comments and tags are needed to collect the required metadata for the `dbt_queries` model. First, make sure to remove any existing `+query_tag: dbt` from your `dbt_project.yml`, then add the query tags with one of these two options:
 
 Option 1: If running dbt >= 1.2, simply configure the dispatch search order in `dbt_project.yml`.
 
