@@ -15,4 +15,6 @@ models:
     - name: database_name
       description: Subcategories where service = "Serverless Tasks" or service = "Storage" and storage_type = "Table and Time Travel" or "Failsafe".
     - name: spend
-      description: Spend in the account's currency.
+      description: Spend in the currency described by the 'currency' column
+    - name: currency
+      description: Spend currency, retrieved from Snowflake's daily rate sheet
