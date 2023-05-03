@@ -56,3 +56,5 @@ models:
         description: If using dbt Cloud, the URL of the issuing job. The dbt_cloud_account_id dbt variable must be set for this field to populate.
       - name: dbt_cloud_run_url
         description: If using dbt Cloud, the URL of the issuing run. The dbt_cloud_account_id dbt variable must be set for this field to populate.
+      - name: dbt_node_owner
+        description: Owner of the dbt node

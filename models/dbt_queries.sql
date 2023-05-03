@@ -28,6 +28,7 @@ select
     dbt_metadata['dbt_cloud_run_id']::string as dbt_cloud_run_id,
     dbt_metadata['dbt_cloud_run_reason_category']::string as dbt_cloud_run_reason_category,
     dbt_metadata['dbt_cloud_run_reason']::string as dbt_cloud_run_reason,
+    dbt_metadata['owner']::string as dbt_node_owner,
     case
         when dbt_cloud_project_id is not null
         then
