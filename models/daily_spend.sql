@@ -83,7 +83,7 @@ storage_spend_daily as (
             0
         ) as spend,
         spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
+        any_value(coalesce(daily_rates.currency, latest_rates.currency)) as currency
     from dates
     left join
         storage_terabytes_daily on dates.date = storage_terabytes_daily.date
