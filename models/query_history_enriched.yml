@@ -160,6 +160,9 @@ models:
         description: Cloud service costs associated with the query, in the primary currency of your account. Can be 0 if total cloud services credits consumption was less than 10% of total compute credits consumption on that day.
       - name: query_cost
         description: Total cost associated with the query, calculated as sum of compute_cost and cloud_services_cost, in the primary currency of your account.
+      - name: currency
+        description: Spend currency, retrieved from Snowflake's daily rate sheet
+
 
       # New columns
       - name: ran_on_warehouse

@@ -24,3 +24,5 @@ models:
         description: Total cost associated with the query, calculated as sum of compute_cost and cloud_services_cost, in the primary currency of your account.
       - name: ran_on_warehouse
         description: Indicator for whether the query ran on a warehouse. Certain queries, such as metadata queries, can be entirely processed in cloud services.
+      - name: currency
+        description: Spend currency, retrieved from Snowflake's daily rate sheet
