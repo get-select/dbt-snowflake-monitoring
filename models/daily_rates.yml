@@ -18,6 +18,8 @@ models:
         description: The type of usage, which can be one of compute, storage, etc.
       - name: effective_rate
         description: The rate after applying any applicable discounts per the contract for the organization.
+      - name: currency
+        description: Currency of effect rate, retrieved from Snowflake's daily rate sheet
       - name: is_overage_rate
         description: Indicator for whether the effective_rate is an overage rate.
       - name: is_latest_rate

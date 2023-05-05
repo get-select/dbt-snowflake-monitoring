@@ -149,7 +149,8 @@ select
     -- this may change if cloud credits make up >10% of compute cost.
     (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as cloud_services_cost,
     all_queries.compute_cost + cloud_services_cost as query_cost,
-    all_queries.ran_on_warehouse
+    all_queries.ran_on_warehouse,
+    coalesce(daily_rates.currency, current_rates.currency) as currency
 from all_queries
 inner join credits_billed_daily
     on date(all_queries.start_time) = credits_billed_daily.date

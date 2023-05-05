@@ -82,7 +82,8 @@ storage_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(coalesce(daily_rates.currency, latest_rates.currency)) as currency
     from dates
     left join
         storage_terabytes_daily on dates.date = storage_terabytes_daily.date
@@ -111,7 +112,8 @@ compute_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -144,7 +146,8 @@ serverless_task_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_serverless_task_history') }} on
         dates.date = convert_timezone(
@@ -175,7 +178,8 @@ adj_for_incl_cloud_services_daily as (
             ),
             0
         ) as spend,
-        0 as spend_net_cloud_services
+        0 as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_daily_history') }} on
         dates.date = stg_metering_daily_history.date
@@ -205,7 +209,10 @@ _cloud_services_spend_daily as (
         ) as credits_used_cloud_services,
         any_value(
             coalesce(daily_rates.effective_rate, latest_rates.effective_rate)
-        ) as effective_rate
+        ) as effective_rate,
+        any_value(
+            coalesce(daily_rates.currency, latest_rates.currency)
+        ) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -249,7 +256,8 @@ cloud_services_spend_daily as (
                 _cloud_services_spend_daily.credits_used_cloud_services,
                 credits_billed_daily.daily_credits_used_cloud_services
             ) * credits_billed_daily.daily_billable_cloud_services
-        ) * _cloud_services_spend_daily.effective_rate as spend_net_cloud_services
+        ) * _cloud_services_spend_daily.effective_rate as spend_net_cloud_services,
+        currency as currency
     from _cloud_services_spend_daily
     inner join credits_billed_daily on
                _cloud_services_spend_daily.date = credits_billed_daily.date
@@ -271,7 +279,8 @@ automatic_clustering_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -303,7 +312,8 @@ materialized_view_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -335,7 +345,8 @@ snowpipe_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -367,7 +378,8 @@ query_acceleration_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -399,7 +411,8 @@ replication_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -431,7 +444,8 @@ search_optimization_spend_daily as (
             ),
             0
         ) as spend,
-        spend as spend_net_cloud_services
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
