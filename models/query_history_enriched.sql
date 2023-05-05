@@ -131,7 +131,8 @@ select
     query_history.queued_overload_time / 1000 as queued_overload_time_s,
     query_history.transaction_blocked_time / 1000 as transaction_blocked_time_s,
     query_history.list_external_files_time / 1000 as list_external_files_time_s,
-    query_history.execution_time / 1000 as execution_time_s
+    query_history.execution_time / 1000 as execution_time_s,
+    cost_per_query.currency
 
 from query_history
 inner join cost_per_query

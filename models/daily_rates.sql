@@ -86,6 +86,11 @@ rates_w_overage as (
             lag(rate_sheet_daily.effective_rate) ignore nulls over (partition by base.usage_type order by base.date),
             lead(rate_sheet_daily.effective_rate) ignore nulls over (partition by base.usage_type order by base.date)
         ) as effective_rate,
+        coalesce(
+            rate_sheet_daily.currency,
+            lag(rate_sheet_daily.currency) ignore nulls over (partition by base.usage_type order by base.date),
+            lead(rate_sheet_daily.currency) ignore nulls over (partition by base.usage_type order by base.date)
+        ) as currency,
         base.usage_type like 'overage-%' as is_overage_rate,
         replace(base.usage_type, 'overage-', '') as associated_usage_type,
         case
@@ -109,6 +114,7 @@ rates as (
         associated_usage_type,
         service_type,
         effective_rate,
+        currency,
         is_overage_rate
     from rates_w_overage
     qualify row_number() over (partition by date, service_type, associated_usage_type order by rate_priority desc) = 1
@@ -119,6 +125,7 @@ select
     associated_usage_type as usage_type,
     service_type,
     effective_rate,
+    currency,
     is_overage_rate,
     row_number() over (partition by service_type, associated_usage_type order by date desc) = 1 as is_latest_rate
 from rates
