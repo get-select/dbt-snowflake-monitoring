@@ -1,0 +1,6 @@
+kind: Features
+body: Support dbt 1.5.0
+time: 2023-05-12T00:18:49.982015+01:00
+custom:
+  Author: NiallRees
+  PR: "106"
