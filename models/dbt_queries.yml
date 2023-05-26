@@ -20,6 +20,8 @@ models:
         description: Boolean describing if the node run was incremental.
       - name: dbt_node_alias
         description: Alias set for the node.
+      - name: dbt_node_meta
+        description: Dict of any meta set for the node.
       - name: dbt_node_tags
         description: Array of all tags set for the node.
       - name: dbt_node_refs

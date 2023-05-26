@@ -1,0 +1,6 @@
+kind: Features
+body: Add node_meta to dbt_query model
+time: 2023-05-26T16:15:01.927389+01:00
+custom:
+  Author: pratik60
+  PR: "109"
