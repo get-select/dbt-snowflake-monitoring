@@ -12,6 +12,7 @@ select
     dbt_metadata['materialized']::string as dbt_node_materialized,
     dbt_metadata['is_incremental']::boolean as dbt_node_is_incremental,
     dbt_metadata['node_alias']::string as dbt_node_alias,
+    dbt_metadata['node_meta']::variant as dbt_node_meta,
     dbt_metadata['node_tags']::array as node_tags,
     iff(dbt_snowflake_query_tags_version >= '1.1.3', dbt_metadata['node_refs']::array, []) as dbt_node_refs, -- correct refs available from 1.1.3 onwards
     dbt_metadata['node_database']::string as dbt_node_database,
