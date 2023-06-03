@@ -73,19 +73,15 @@ query_cost as (
     select
         query_seconds_per_hour.*,
         credits_billed_hourly.credits_used_compute * daily_rates.effective_rate as actual_warehouse_cost,
-        credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as allocated_compute_cost_in_hour
+        credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour * daily_rates.effective_rate as allocated_compute_cost_in_hour
     from query_seconds_per_hour
     inner join credits_billed_hourly
         on query_seconds_per_hour.warehouse_id = credits_billed_hourly.warehouse_id
             and query_seconds_per_hour.hour = credits_billed_hourly.hour
-    left join {{ ref('daily_rates') }}
+    inner join {{ ref('daily_rates') }}
         on date(query_seconds_per_hour.start_time) = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'compute'
-    inner join {{ ref('daily_rates') }} as current_rates
-        on current_rates.is_latest_rate
-            and current_rates.service_type = 'COMPUTE'
-            and current_rates.usage_type = 'compute'
 ),
 
 cost_per_query as (

@@ -27,7 +27,7 @@ dates_base as (
     from table(generator(rowcount => (365 * 3)))
 ),
 
-rate_sheet_daily as (
+rate_sheet_daily_base as (
     select
         date,
         usage_type,
@@ -39,27 +39,53 @@ rate_sheet_daily as (
         account_locator = {{ account_locator }}
 ),
 
+stop_thresholds as (
+    select min(date) as start_date
+    from rate_sheet_daily_base
+
+    union all
+
+    select min(date) as start_date
+    from {{ ref('remaining_balance_daily_w_out_contract') }}
+),
+
+date_range as (
+    select
+        max(start_date) as start_date,
+        current_date as end_date
+    from stop_thresholds
+),
+
 remaining_balance_daily as (
     select
         date,
         free_usage_balance + capacity_balance + on_demand_consumption_balance + rollover_balance as remaining_balance,
         remaining_balance < 0 as is_account_in_overage
-    from {{ ref('stg_remaining_balance_daily') }}
+    from {{ ref('remaining_balance_daily_w_out_contract') }}
 ),
 
-rates_date_range as (
+latest_remaining_balance_daily as (
     select
-        min(date) as start_date,
-        max(date) as end_date
-    from rate_sheet_daily
+        date,
+        remaining_balance,
+        is_account_in_overage
+    from remaining_balance_daily
+    qualify row_number() over (order by date desc) = 1
+),
+
+rate_sheet_daily as (
+    select rate_sheet_daily_base.*
+    from rate_sheet_daily_base
+    inner join date_range
+        on rate_sheet_daily_base.date between date_range.start_date and date_range.end_date
 ),
 
 rates_date_range_w_usage_types as (
     select
-        rates_date_range.start_date,
-        rates_date_range.end_date,
+        date_range.start_date,
+        date_range.end_date,
         usage_types.usage_type
-    from rates_date_range
+    from date_range
     cross join (select distinct usage_type from rate_sheet_daily) as usage_types
 ),
 
@@ -93,14 +119,16 @@ rates_w_overage as (
         ) as currency,
         base.usage_type like 'overage-%' as is_overage_rate,
         replace(base.usage_type, 'overage-', '') as associated_usage_type,
+        coalesce(remaining_balance_daily.is_account_in_overage, latest_remaining_balance_daily.is_account_in_overage) as _is_account_in_overage,
         case
-            when remaining_balance_daily.is_account_in_overage and is_overage_rate then 1
-            when not remaining_balance_daily.is_account_in_overage and not is_overage_rate then 1
+            when _is_account_in_overage and is_overage_rate then 1
+            when not _is_account_in_overage and not is_overage_rate then 1
             else 0
         end as rate_priority
 
     from base
-    inner join remaining_balance_daily
+    inner join latest_remaining_balance_daily
+    left join remaining_balance_daily
         on base.date = remaining_balance_daily.date
     left join rate_sheet_daily
         on base.date = rate_sheet_daily.date
