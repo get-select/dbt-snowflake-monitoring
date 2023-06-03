@@ -1,5 +1,5 @@
 name: 'dbt_snowflake_monitoring'
-version: '4.2.0'
+version: '4.3.0'
 config-version: 2
 
 profile: dbt_snowflake_monitoring

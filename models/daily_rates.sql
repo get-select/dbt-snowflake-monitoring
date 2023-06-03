@@ -46,7 +46,7 @@ stop_thresholds as (
     union all
 
     select min(date) as start_date
-    from {{ ref('remaining_balance_daily_w_out_contract') }}
+    from {{ ref('remaining_balance_daily_without_contract_view') }}
 ),
 
 date_range as (
@@ -61,7 +61,7 @@ remaining_balance_daily as (
         date,
         free_usage_balance + capacity_balance + on_demand_consumption_balance + rollover_balance as remaining_balance,
         remaining_balance < 0 as is_account_in_overage
-    from {{ ref('remaining_balance_daily_w_out_contract') }}
+    from {{ ref('remaining_balance_daily_without_contract_view') }}
 ),
 
 latest_remaining_balance_daily as (
