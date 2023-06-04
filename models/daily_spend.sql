@@ -32,12 +32,6 @@ dates as (
         )
 ),
 
-latest_rates as (
-    select *
-    from {{ ref('daily_rates') }}
-    where is_latest_rate
-),
-
 storage_terabytes_daily as (
     select
         date,
@@ -76,14 +70,12 @@ storage_spend_daily as (
                 div0(
                     storage_terabytes_daily.storage_terabytes,
                     dates.days_in_month
-                ) * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                ) * daily_rates.effective_rate
             ),
             0
         ) as spend,
         spend as spend_net_cloud_services,
-        any_value(coalesce(daily_rates.currency, latest_rates.currency)) as currency
+        any_value(daily_rates.currency) as currency
     from dates
     left join
         storage_terabytes_daily on dates.date = storage_terabytes_daily.date
@@ -91,9 +83,6 @@ storage_spend_daily as (
         on storage_terabytes_daily.date = daily_rates.date
             and daily_rates.service_type = 'STORAGE'
             and daily_rates.usage_type = 'storage'
-    inner join latest_rates
-        on latest_rates.service_type = 'STORAGE'
-            and latest_rates.usage_type = 'storage'
     group by 1, 2, 3, 4, 5
 ),
 
@@ -106,9 +95,7 @@ compute_spend_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used_compute * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_history.credits_used_compute * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -123,9 +110,6 @@ compute_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'compute'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'compute'
     where
         stg_metering_history.service_type = 'WAREHOUSE_METERING' and stg_metering_history.name != 'CLOUD_SERVICES_ONLY'
     group by 1, 2, 3, 4
@@ -140,9 +124,7 @@ serverless_task_spend_daily as (
         stg_serverless_task_history.database_name,
         coalesce(
             sum(
-                stg_serverless_task_history.credits_used * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_serverless_task_history.credits_used * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -157,9 +139,6 @@ serverless_task_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'serverless tasks'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'serverless tasks'
     group by 1, 2, 3, 4, 5
 ),
 
@@ -172,9 +151,7 @@ adj_for_incl_cloud_services_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_daily_history.credits_adjustment_cloud_services * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_daily_history.credits_adjustment_cloud_services * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -187,9 +164,6 @@ adj_for_incl_cloud_services_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'cloud services'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'cloud services'
     group by 1, 2, 3, 4
 ),
 
@@ -207,12 +181,8 @@ _cloud_services_spend_daily as (
         coalesce(
             sum(stg_metering_history.credits_used_cloud_services), 0
         ) as credits_used_cloud_services,
-        any_value(
-            coalesce(daily_rates.effective_rate, latest_rates.effective_rate)
-        ) as effective_rate,
-        any_value(
-            coalesce(daily_rates.currency, latest_rates.currency)
-        ) as currency
+        any_value(daily_rates.effective_rate) as effective_rate,
+        any_value(daily_rates.currency) as currency
     from dates
     left join {{ ref('stg_metering_history') }} on
         dates.date = convert_timezone(
@@ -223,9 +193,6 @@ _cloud_services_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'cloud services'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'cloud services'
     group by 1, 2, 3, 4
 ),
 
@@ -257,7 +224,7 @@ cloud_services_spend_daily as (
                 credits_billed_daily.daily_credits_used_cloud_services
             ) * credits_billed_daily.daily_billable_cloud_services
         ) * _cloud_services_spend_daily.effective_rate as spend_net_cloud_services,
-        currency as currency
+        _cloud_services_spend_daily.currency
     from _cloud_services_spend_daily
     inner join credits_billed_daily on
                _cloud_services_spend_daily.date = credits_billed_daily.date
@@ -273,9 +240,7 @@ automatic_clustering_spend_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_history.credits_used * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -291,9 +256,6 @@ automatic_clustering_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'automatic clustering'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'automatic clustering'
     group by 1, 2, 3, 4
 ),
 
@@ -306,9 +268,7 @@ materialized_view_spend_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_history.credits_used * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -324,9 +284,6 @@ materialized_view_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'materialized view' {# TODO: need someone to confirm whether its materialized 'view' or 'views' #}
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'materialized view'
     group by 1, 2, 3, 4
 ),
 
@@ -339,9 +296,7 @@ snowpipe_spend_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_history.credits_used * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -357,9 +312,6 @@ snowpipe_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'snowpipe'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'snowpipe'
     group by 1, 2, 3, 4
 ),
 
@@ -372,9 +324,7 @@ query_acceleration_spend_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_history.credits_used * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -390,9 +340,6 @@ query_acceleration_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'query acceleration'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'query acceleration'
     group by 1, 2, 3, 4
 ),
 
@@ -405,9 +352,7 @@ replication_spend_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_history.credits_used * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -423,9 +368,6 @@ replication_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'replication'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'replication'
     group by 1, 2, 3, 4
 ),
 
@@ -438,9 +380,7 @@ search_optimization_spend_daily as (
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used * coalesce(
-                    daily_rates.effective_rate, latest_rates.effective_rate
-                )
+                stg_metering_history.credits_used * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -456,9 +396,6 @@ search_optimization_spend_daily as (
         on dates.date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
             and daily_rates.usage_type = 'search optimization'
-    inner join latest_rates
-        on latest_rates.service_type = 'COMPUTE'
-            and latest_rates.usage_type = 'search optimization'
     group by 1, 2, 3, 4
 )
 
