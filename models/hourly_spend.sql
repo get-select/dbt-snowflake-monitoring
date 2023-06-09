@@ -179,9 +179,9 @@ _cloud_services_usage_hourly as (
         ) as credits_used_cloud_services
     from hours
     left join {{ ref('stg_metering_history') }} on
-        hours.date = convert_timezone(
+        hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
         and stg_metering_history.service_type = 'WAREHOUSE_METERING'
     group by 1, 2, 3, 4, 5
 ),
