@@ -102,7 +102,7 @@ compute_spend_hourly as (
     left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
