@@ -1,11 +1,11 @@
 version: 2
 
 models:
-  - name: daily_spend
-    description: Table of daily spend broken down by services as listed on the invoice, with additional granularity.
+  - name: hourly_spend
+    description: Table of hourly spend broken down by services as listed on the invoice, with additional granularity.
     columns:
-    - name: date
-      description: Date of spend in UTC timezone to match with Snowflake's billing timezone.
+    - name: hour
+      description: Hour of spend.
     - name: service
       description: Top level spend category per Snowflake invoice. One of Storage, Compute, Cloud Services, Adj For Incl Cloud Services, Automatic Clustering, Materialized Views, Snowpipe, Query Acceleration, Replication, or Search Optimization.
     - name: storage_type
