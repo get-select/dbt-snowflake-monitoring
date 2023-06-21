@@ -24,7 +24,7 @@ dates_base as (
             '-' || row_number() over (order by null),
             dateadd('day', '+1', current_date)
         ) as date
-    from table(generator(rowcount => (365 * 3)))
+    from table(generator(rowcount => (365 * 5)))
 ),
 
 rate_sheet_daily_base as (
@@ -127,7 +127,7 @@ rates_w_overage as (
         end as rate_priority
 
     from base
-    inner join latest_remaining_balance_daily
+    left join latest_remaining_balance_daily on latest_remaining_balance_daily.date is not null
     left join remaining_balance_daily
         on base.date = remaining_balance_daily.date
     left join rate_sheet_daily
