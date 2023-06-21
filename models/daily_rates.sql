@@ -22,8 +22,8 @@ dates_base as (
     select date_day as date from (
         {{ dbt_utils.date_spine(
                 datepart="day",
-                start_date='2018-01-01',
-                end_date="dateadd('day', 1, current_date))"
+                start_date="'2018-01-01'",
+                end_date="dateadd(day, 1, current_date)"
             )
         }}
     )
