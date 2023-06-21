@@ -19,12 +19,14 @@ current_account()
 
 with
 dates_base as (
-    select dateadd(
-            'day',
-            '-' || row_number() over (order by null),
-            dateadd('day', '+1', current_date)
-        ) as date
-    from table(generator(rowcount => (365 * 3)))
+    select date_day as date from (
+        {{ dbt_utils.date_spine(
+                datepart="day",
+                start_date="'2018-01-01'",
+                end_date="dateadd(day, 1, current_date)"
+            )
+        }}
+    )
 ),
 
 rate_sheet_daily_base as (
@@ -119,7 +121,7 @@ rates_w_overage as (
         ) as currency,
         base.usage_type like 'overage-%' as is_overage_rate,
         replace(base.usage_type, 'overage-', '') as associated_usage_type,
-        coalesce(remaining_balance_daily.is_account_in_overage, latest_remaining_balance_daily.is_account_in_overage) as _is_account_in_overage,
+        coalesce(remaining_balance_daily.is_account_in_overage, latest_remaining_balance_daily.is_account_in_overage, false) as _is_account_in_overage,
         case
             when _is_account_in_overage and is_overage_rate then 1
             when not _is_account_in_overage and not is_overage_rate then 1
@@ -127,7 +129,7 @@ rates_w_overage as (
         end as rate_priority
 
     from base
-    inner join latest_remaining_balance_daily
+    left join latest_remaining_balance_daily on latest_remaining_balance_daily.date is not null
     left join remaining_balance_daily
         on base.date = remaining_balance_daily.date
     left join rate_sheet_daily
