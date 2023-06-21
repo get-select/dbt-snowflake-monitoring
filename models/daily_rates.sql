@@ -19,12 +19,14 @@ current_account()
 
 with
 dates_base as (
-    select dateadd(
-            'day',
-            '-' || row_number() over (order by null),
-            dateadd('day', '+1', current_date)
-        ) as date
-    from table(generator(rowcount => (365 * 5)))
+    select date_day as date from (
+        {{ dbt_utils.date_spine(
+                datepart="day",
+                start_date='2018-01-01',
+                end_date="dateadd('day', 1, current_date))"
+            )
+        }}
+    )
 ),
 
 rate_sheet_daily_base as (
