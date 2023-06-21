@@ -121,7 +121,7 @@ rates_w_overage as (
         ) as currency,
         base.usage_type like 'overage-%' as is_overage_rate,
         replace(base.usage_type, 'overage-', '') as associated_usage_type,
-        coalesce(remaining_balance_daily.is_account_in_overage, latest_remaining_balance_daily.is_account_in_overage) as _is_account_in_overage,
+        coalesce(remaining_balance_daily.is_account_in_overage, latest_remaining_balance_daily.is_account_in_overage, false) as _is_account_in_overage,
         case
             when _is_account_in_overage and is_overage_rate then 1
             when not _is_account_in_overage and not is_overage_rate then 1

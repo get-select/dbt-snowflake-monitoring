@@ -277,7 +277,7 @@ materialized_view_spend_hourly as (
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
             and daily_rates.service_type = 'COMPUTE'
-            and daily_rates.usage_type = 'materialized view' {# TODO: need someone to confirm whether its materialized 'view' or 'views' #}
+            and daily_rates.usage_type = 'materialized views'
     group by 1, 2, 3, 4
 ),
 
