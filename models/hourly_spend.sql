@@ -244,7 +244,7 @@ automatic_clustering_spend_hourly as (
     left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
         and stg_metering_history.service_type = 'AUTO_CLUSTERING'
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
@@ -272,7 +272,7 @@ materialized_view_spend_hourly as (
     left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
         and stg_metering_history.service_type = 'MATERIALIZED_VIEW'
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
@@ -300,7 +300,7 @@ snowpipe_spend_hourly as (
     left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
         and stg_metering_history.service_type = 'PIPE'
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
@@ -328,7 +328,7 @@ query_acceleration_spend_hourly as (
     left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
         and stg_metering_history.service_type = 'QUERY_ACCELERATION'
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
@@ -356,7 +356,7 @@ replication_spend_hourly as (
     left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
         and stg_metering_history.service_type = 'REPLICATION'
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
@@ -384,7 +384,7 @@ search_optimization_spend_hourly as (
     left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
-        )::date
+        )
         and stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
     left join {{ ref('daily_rates') }}
         on hours.hour::date = daily_rates.date
