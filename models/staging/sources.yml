@@ -5,15 +5,16 @@ sources:
     database: snowflake
     schema: account_usage
     tables:
-      - name: stage_storage_usage_history
-      - name: database_storage_usage_history
-      - name: query_history
-      - name: warehouse_metering_history
-      - name: metering_history
-      - name: metering_daily_history
-      - name: serverless_task_history
-      - name: warehouse_events_history
       - name: access_history
+      - name: data_transfer_history
+      - name: database_storage_usage_history
+      - name: metering_daily_history
+      - name: metering_history
+      - name: query_history
+      - name: serverless_task_history
+      - name: stage_storage_usage_history
+      - name: warehouse_events_history
+      - name: warehouse_metering_history
 
   - name: snowflake_organization_usage
     database: snowflake
@@ -21,4 +22,5 @@ sources:
     tables:
       - name: rate_sheet_daily
       - name: remaining_balance_daily
+      - name: usage_in_currency_daily
 

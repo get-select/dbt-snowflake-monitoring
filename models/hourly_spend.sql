@@ -26,6 +26,7 @@ hours as (
     select
         date_hour as hour,
         hour::date as date,
+        count(hour) over (partition by date) as hours_thus_far,
         day(last_day(date)) as days_in_month
     from hour_spine
 ),
@@ -81,6 +82,28 @@ storage_spend_hourly as (
             and daily_rates.service_type = 'STORAGE'
             and daily_rates.usage_type = 'storage'
     group by 1, 2, 3, 4, 5
+),
+
+data_transfer_spend_hourly as (
+    -- Right now we don't have a way of getting this at an hourly grain
+    -- We can get source cloud + region, target cloud + region, and bytes transferred at an hourly grain from DATA_TRANSFER_HISTORY
+    -- But Snowflake doesn't provide data transfer rates programmatically, so we can't get the cost
+    -- We could make a LUT from https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf but it would be a lot of work to maintain and would frequently become out of date
+    -- So for now we just use the daily reported usage and evenly distribute it across the day
+    select
+        hours.hour,
+        'Data Transfer' as service,
+        null as storage_type,
+        null as warehouse_name,
+        null as database_name,
+        coalesce(stg_usage_in_currency_daily.usage_in_currency/hours.hours_thus_far, 0) as spend,
+        spend as spend_net_cloud_services,
+        stg_usage_in_currency_daily.currency as currency
+    from hours
+    left join {{ ref('stg_usage_in_currency_daily') }} on
+        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and stg_usage_in_currency_daily.usage_type = 'data transfer'
+        and hours.hour::date = stg_usage_in_currency_daily.usage_date
 ),
 
 compute_spend_hourly as (
@@ -395,6 +418,8 @@ search_optimization_spend_hourly as (
 
 unioned as (
     select * from storage_spend_hourly
+    union all
+    select * from data_transfer_spend_hourly
     union all
     select * from compute_spend_hourly
     union all
