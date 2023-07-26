@@ -96,7 +96,7 @@ data_transfer_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        stg_usage_in_currency_daily.usage_in_currency/hours.hours_thus_far as spend,
+        coalesce(stg_usage_in_currency_daily.usage_in_currency/hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
         stg_usage_in_currency_daily.currency as currency
     from hours
