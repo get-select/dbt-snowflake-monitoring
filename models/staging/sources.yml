@@ -6,7 +6,6 @@ sources:
     schema: account_usage
     tables:
       - name: access_history
-      - name: data_transfer_history
       - name: database_storage_usage_history
       - name: metering_daily_history
       - name: metering_history
