@@ -332,6 +332,34 @@ snowpipe_spend_hourly as (
     group by 1, 2, 3, 4
 ),
 
+snowpipe_streaming_spend_hourly as (
+    select
+        hours.hour,
+        'Snowpipe Streaming' as service,
+        null as storage_type,
+        null as warehouse_name,
+        null as database_name,
+        coalesce(
+            sum(
+                stg_metering_history.credits_used * daily_rates.effective_rate
+            ),
+            0
+        ) as spend,
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
+    from hours
+    left join {{ ref('stg_metering_history') }} on
+        hours.hour = convert_timezone(
+            'UTC', stg_metering_history.start_time
+        )
+        and stg_metering_history.service_type = 'SNOWPIPE_STREAMING'
+    left join {{ ref('daily_rates') }}
+        on hours.hour::date = daily_rates.date
+            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.usage_type = 'snowpipe streaming'
+    group by 1, 2, 3, 4
+),
+
 query_acceleration_spend_hourly as (
     select
         hours.hour,
@@ -432,6 +460,8 @@ unioned as (
     select * from materialized_view_spend_hourly
     union all
     select * from snowpipe_spend_hourly
+    union all
+    select * from snowpipe_streaming_spend_hourly
     union all
     select * from query_acceleration_spend_hourly
     union all
