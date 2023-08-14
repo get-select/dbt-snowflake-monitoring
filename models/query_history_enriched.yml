@@ -156,10 +156,16 @@ models:
         description: When the query began executing on the warehouse (in the UTC time zone). This will always be after the start_time.
       - name: compute_cost
         description: Compute costs associated with the query, in the primary currency of your account. Can be 0 if the query did not run on a warehouse.
+      - name: compute_credits
+        description: Compute credits associated with the query, in the primary currency of your account. Can be 0 if the query did not run on a warehouse.
       - name: cloud_services_cost
         description: Cloud service costs associated with the query, in the primary currency of your account. Can be 0 if total cloud services credits consumption was less than 10% of total compute credits consumption on that day.
+      - name: cloud_services_credits
+        description: Cloud service credits associated with the query, in the primary currency of your account. Can be 0 if total cloud services credits consumption was less than 10% of total compute credits consumption on that day.
       - name: query_cost
         description: Total cost associated with the query, calculated as sum of compute_cost and cloud_services_cost, in the primary currency of your account.
+      - name: query_credits
+        description: Total credits associated with the query, calculated as sum of compute_credits and cloud_services_credits, in the primary currency of your account.
       - name: currency
         description: Spend currency, retrieved from Snowflake's daily rate sheet
 
