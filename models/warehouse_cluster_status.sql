@@ -10,7 +10,7 @@ warehouse_cluster_status_base as (
     select
         warehouse_id,
         warehouse_name,
-        cluster_number + 1 as cluster_number,
+        cluster_number,
         timestamp as valid_from,
         lead(timestamp) over (partition by warehouse_id, cluster_number order by timestamp asc) as valid_to,
         event_name = 'RESUME_CLUSTER' as is_active
