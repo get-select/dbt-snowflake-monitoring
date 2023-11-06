@@ -1,0 +1,6 @@
+kind: Features
+body: Add credit consumption to cost per query
+time: 2023-08-15T01:30:55.1004512Z
+custom:
+  Author: yingyingqiqi
+  PR: "127"

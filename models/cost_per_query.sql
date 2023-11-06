@@ -73,7 +73,8 @@ query_cost as (
     select
         query_seconds_per_hour.*,
         credits_billed_hourly.credits_used_compute * daily_rates.effective_rate as actual_warehouse_cost,
-        credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour * daily_rates.effective_rate as allocated_compute_cost_in_hour
+        credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour * daily_rates.effective_rate as allocated_compute_cost_in_hour,
+        credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour as allocated_compute_credits_in_hour
     from query_seconds_per_hour
     inner join credits_billed_hourly
         on query_seconds_per_hour.warehouse_id = credits_billed_hourly.warehouse_id
@@ -91,6 +92,7 @@ cost_per_query as (
         any_value(end_time) as end_time,
         any_value(execution_start_time) as execution_start_time,
         sum(allocated_compute_cost_in_hour) as compute_cost,
+        sum(allocated_compute_credits_in_hour) as compute_credits,
         any_value(credits_used_cloud_services) as credits_used_cloud_services,
         any_value(ran_on_warehouse) as ran_on_warehouse
     from query_cost
@@ -114,6 +116,7 @@ all_queries as (
         end_time,
         execution_start_time,
         compute_cost,
+        compute_credits,
         credits_used_cloud_services,
         ran_on_warehouse
     from cost_per_query
@@ -126,6 +129,7 @@ all_queries as (
         end_time,
         execution_start_time,
         0 as compute_cost,
+        0 as compute_credits,
         credits_used_cloud_services,
         ran_on_warehouse
     from filtered_queries
@@ -139,12 +143,15 @@ select
     all_queries.end_time,
     all_queries.execution_start_time,
     all_queries.compute_cost,
+    all_queries.compute_credits,
     -- For the most recent day, which is not yet complete, this calculation won't be perfect.
     -- For example, at 12PM on the latest day, it's possible that cloud credits make up <10% of compute cost, so the queries
     -- from that day are not allocated any cloud_services_cost. The next time the model runs, after we have the full day of data,
     -- this may change if cloud credits make up >10% of compute cost.
     (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as cloud_services_cost,
+    div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services as cloud_services_credits,
     all_queries.compute_cost + cloud_services_cost as query_cost,
+    all_queries.compute_credits + cloud_services_credits as query_credits,
     all_queries.ran_on_warehouse,
     coalesce(daily_rates.currency, current_rates.currency) as currency
 from all_queries

@@ -43,8 +43,11 @@ cost_per_query as (
 select
     cost_per_query.query_id,
     cost_per_query.compute_cost,
+    cost_per_query.compute_credits,
     cost_per_query.cloud_services_cost,
+    cost_per_query.cloud_services_credits,
     cost_per_query.query_cost,
+    cost_per_query.query_credits,
     cost_per_query.execution_start_time,
 
     -- Grab all columns from query_history (except the query time columns which we rename below)
