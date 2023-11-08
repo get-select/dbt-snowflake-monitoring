@@ -115,6 +115,16 @@ models:
       - name: query_acceleration_upper_limit_scale_factor
         description: Upper limit scale factor that a query would have benefited from.
 
+      # Snowflake's Query Hash & Parameterized Query Hash columns
+      - name: query_hash
+        description: The hash value computed based on the canonicalized SQL text.
+      - name: query_hash_version
+        description: The version of the logic used to compute QUERY_HASH.
+      - name: query_parameterized_hash
+        description: The hash value computed based on the parameterized query.
+      - name: query_parameterized_hash_version
+        description: The version of the logic used to compute QUERY_PARAMETERIZED_HASH.
+
       # Renamed existing columns
       - name: total_elapsed_time_ms
         description: Elapsed time (in milliseconds).
