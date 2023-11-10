@@ -63,7 +63,11 @@ select
     is_client_generated_statement,
     query_acceleration_bytes_scanned,
     query_acceleration_partitions_scanned,
-    query_acceleration_upper_limit_scale_factor
+    query_acceleration_upper_limit_scale_factor,
+    query_hash,
+    query_hash_version,
+    query_parameterized_hash,
+    query_parameterized_hash_version
 from {{ source('snowflake_account_usage', 'query_history') }}
 
 {% if is_incremental() %}

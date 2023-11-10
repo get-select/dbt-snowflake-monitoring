@@ -106,6 +106,10 @@ select
     query_history.query_acceleration_bytes_scanned,
     query_history.query_acceleration_partitions_scanned,
     query_history.query_acceleration_upper_limit_scale_factor,
+    query_history.query_hash,
+    query_history.query_hash_version,
+    query_history.query_parameterized_hash,
+    query_history.query_parameterized_hash_version,
 
     -- Rename some existing columns for clarity
     query_history.total_elapsed_time as total_elapsed_time_ms,
