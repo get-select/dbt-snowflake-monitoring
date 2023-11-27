@@ -176,7 +176,7 @@ adj_for_incl_cloud_services_hourly as (
         0 as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_daily_history') }} on
+    left join {{ ref('stg_metering_daily_history') }} stg_metering_daily_history on
         hours.hour = stg_metering_daily_history.date
     left join {{ ref('daily_rates') }} daily_rates
         on hours.hour::date = daily_rates.date
@@ -216,7 +216,7 @@ _cloud_services_billed_daily as (
         sum(
             credits_used_cloud_services + credits_adjustment_cloud_services
         ) as credits_used_cloud_services_billable
-    from {{ ref('stg_metering_daily_history') }}
+    from {{ ref('stg_metering_daily_history') }} stg_metering_daily_history
     where
         service_type = 'WAREHOUSE_METERING'
     group by 1
