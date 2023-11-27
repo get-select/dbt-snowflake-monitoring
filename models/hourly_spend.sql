@@ -37,7 +37,7 @@ storage_terabytes_daily as (
         'Table and Time Travel' as storage_type,
         database_name,
         sum(average_database_bytes) / power(1024, 4) as storage_terabytes
-    from {{ ref('stg_database_storage_usage_history') }}
+    from {{ ref('stg_database_storage_usage_history') }} stg_database_storage_usage_history
     group by 1, 2, 3
     union all
     select
@@ -45,7 +45,7 @@ storage_terabytes_daily as (
         'Failsafe' as storage_type,
         database_name,
         sum(average_failsafe_bytes) / power(1024, 4) as storage_terabytes
-    from {{ ref('stg_database_storage_usage_history') }}
+    from {{ ref('stg_database_storage_usage_history') }} stg_database_storage_usage_history
     group by 1, 2, 3
     union all
     select
@@ -53,7 +53,7 @@ storage_terabytes_daily as (
         'Stage' as storage_type,
         null as database_name,
         sum(average_stage_bytes) / power(1024, 4) as storage_terabytes
-    from {{ ref('stg_stage_storage_usage_history') }}
+    from {{ ref('stg_stage_storage_usage_history') }} stg_stage_storage_usage_history
     group by 1, 2, 3
 ),
 
@@ -100,7 +100,7 @@ data_transfer_spend_hourly as (
         spend as spend_net_cloud_services,
         stg_usage_in_currency_daily.currency as currency
     from hours
-    left join {{ ref('stg_usage_in_currency_daily') }} on
+    left join {{ ref('stg_usage_in_currency_daily') }} stg_usage_in_currency_daily on
         stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
         and stg_usage_in_currency_daily.usage_type = 'data transfer'
         and hours.hour::date = stg_usage_in_currency_daily.usage_date
