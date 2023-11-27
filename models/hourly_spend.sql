@@ -201,7 +201,7 @@ _cloud_services_usage_hourly as (
             sum(stg_metering_history.credits_used_cloud_services), 0
         ) as credits_used_cloud_services
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} STG_METERING_HISTORY on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -264,7 +264,7 @@ automatic_clustering_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -292,7 +292,7 @@ materialized_view_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -320,7 +320,7 @@ snowpipe_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -348,7 +348,7 @@ snowpipe_streaming_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -376,7 +376,7 @@ query_acceleration_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -404,7 +404,7 @@ replication_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -432,7 +432,7 @@ search_optimization_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
