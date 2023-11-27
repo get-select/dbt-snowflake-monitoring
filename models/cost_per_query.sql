@@ -157,7 +157,7 @@ select
 from all_queries
 inner join credits_billed_daily
     on date(all_queries.start_time) = credits_billed_daily.date
-left join {{ ref('daily_rates') }}
+left join {{ ref('daily_rates') }} daily_rates
     on date(all_queries.start_time) = daily_rates.date
         and daily_rates.service_type = 'COMPUTE'
         and daily_rates.usage_type = 'cloud services'
