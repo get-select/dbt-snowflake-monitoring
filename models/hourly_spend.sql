@@ -151,7 +151,7 @@ serverless_task_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_serverless_task_history') }} on
+    left join {{ ref('stg_serverless_task_history') }} stg_serverless_task_history on
         hours.hour = date_trunc('hour', stg_serverless_task_history.start_time)
     left join {{ ref('daily_rates') }} daily_rates
         on hours.hour::date = daily_rates.date
