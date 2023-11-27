@@ -122,7 +122,7 @@ compute_spend_hourly as (
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
