@@ -37,7 +37,7 @@ storage_terabytes_daily as (
         'Table and Time Travel' as storage_type,
         database_name,
         sum(average_database_bytes) / power(1024, 4) as storage_terabytes
-    from {{ ref('stg_database_storage_usage_history') }} AS stg_database_storage_usage_history
+    from {{ ref('stg_database_storage_usage_history') }}
     group by 1, 2, 3
     union all
     select
@@ -45,7 +45,7 @@ storage_terabytes_daily as (
         'Failsafe' as storage_type,
         database_name,
         sum(average_failsafe_bytes) / power(1024, 4) as storage_terabytes
-    from {{ ref('stg_database_storage_usage_history') }} AS stg_database_storage_usage_history
+    from {{ ref('stg_database_storage_usage_history') }}
     group by 1, 2, 3
     union all
     select
@@ -53,7 +53,7 @@ storage_terabytes_daily as (
         'Stage' as storage_type,
         null as database_name,
         sum(average_stage_bytes) / power(1024, 4) as storage_terabytes
-    from {{ ref('stg_stage_storage_usage_history') }} AS stg_stage_storage_usage_history
+    from {{ ref('stg_stage_storage_usage_history') }}
     group by 1, 2, 3
 ),
 
@@ -201,7 +201,7 @@ _cloud_services_usage_hourly as (
             sum(stg_metering_history.credits_used_cloud_services), 0
         ) as credits_used_cloud_services
     from hours
-    left join {{ ref('stg_metering_history') }} AS STG_METERING_HISTORY on
+    left join {{ ref('stg_metering_history') }} on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
@@ -216,7 +216,7 @@ _cloud_services_billed_daily as (
         sum(
             credits_used_cloud_services + credits_adjustment_cloud_services
         ) as credits_used_cloud_services_billable
-    from {{ ref('stg_metering_daily_history') }} AS stg_metering_daily_history
+    from {{ ref('stg_metering_daily_history') }}
     where
         service_type = 'WAREHOUSE_METERING'
     group by 1
