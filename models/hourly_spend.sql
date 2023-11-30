@@ -201,7 +201,7 @@ _cloud_services_usage_hourly as (
             sum(stg_metering_history.credits_used_cloud_services), 0
         ) as credits_used_cloud_services
     from hours
-    left join {{ ref('stg_metering_history') }} on
+    left join {{ ref('stg_metering_history') }} as stg_metering_history on
         hours.hour = convert_timezone(
             'UTC', stg_metering_history.start_time
         )
