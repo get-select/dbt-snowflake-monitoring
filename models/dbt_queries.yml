@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: dbt_queries
-    description: Filtered version of query_history_enriched just for queries issued by dbt. Adds additional dbt-specific columns.
+    description: Filtered version of query_history_enriched just for queries issued by dbt. Adds additional dbt-specific columns. Incrementally pulls the last 7 days by default to account for late arriving rates data. This can be overriden by passing a value for dbt_snowflake_monitoring_incremental_days.
     columns:
       - name: dbt_snowflake_query_tags_version
         description: Version of the dbt-snowflake-query-tags package that generated the metadata
