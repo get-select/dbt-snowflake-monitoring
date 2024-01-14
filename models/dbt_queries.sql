@@ -51,7 +51,7 @@ select
 from {{ ref('query_history_enriched') }}
 where dbt_metadata is not null
     {% if is_incremental() %}
-        -- Conservatively re-process the last 7 days to account for late arriving rates data
+        -- Conservatively re-process the last 3 days to account for late arriving rates data
         -- which changes the cost per query
-        and end_time > (select dateadd(day, -7, max(end_time)) from {{ this }})
+        and end_time > (select dateadd(day, -3, max(end_time)) from {{ this }})
     {% endif %}
