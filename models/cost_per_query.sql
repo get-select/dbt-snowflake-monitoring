@@ -24,7 +24,8 @@ filtered_queries as (
             start_time
         ) as execution_start_time,
         start_time,
-        end_time
+        end_time,
+        query_acceleration_bytes_scanned
     from {{ ref('stg_query_history') }}
     where true
         and end_time <= (select latest_ts from stop_threshold)
@@ -70,7 +71,7 @@ query_seconds_per_hour as (
         sum(num_milliseconds_query_ran) over (partition by warehouse_id, hour_start) as total_query_milliseconds_in_hour,
         div0(num_milliseconds_query_ran, total_query_milliseconds_in_hour) as fraction_of_total_query_time_in_hour,
         sum(query_acceleration_bytes_scanned) over (partition by warehouse_id, hour_start) as total_query_acceleration_bytes_scanned_in_hour,
-        div0(query_acceleration_bytes_scanned, total_query_acceleration_bytes_scanned_in_hour) as fraction_of_total_query_acceleration_bytes_scanned_in_hour
+        div0(query_acceleration_bytes_scanned, total_query_acceleration_bytes_scanned_in_hour) as fraction_of_total_query_acceleration_bytes_scanned_in_hour,
         hour_start as hour
     from query_hours
 ),
@@ -180,8 +181,8 @@ select
     -- this may change if cloud credits make up >10% of compute cost.
     (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as cloud_services_cost,
     div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services as cloud_services_credits,
-    all_queries.compute_cost + cloud_services_cost as query_cost,
-    all_queries.compute_credits + cloud_services_credits as query_credits,
+    all_queries.compute_cost + all_queries.query_acceleration_cost + cloud_services_cost as query_cost,
+    all_queries.compute_credits + all_queries.query_acceleration_credits + cloud_services_credits as query_credits,
     all_queries.ran_on_warehouse,
     coalesce(daily_rates.currency, current_rates.currency) as currency
 from all_queries
