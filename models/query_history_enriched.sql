@@ -24,9 +24,9 @@ query_history as (
     from {{ ref('stg_query_history') }}
 
     {% if is_incremental() %}
-        -- Conservatively re-process the last 7 days to account for late arriving rates data
+        -- Conservatively re-process the last 3 days to account for late arriving rates data
         -- which changes the cost per query
-        where end_time > (select dateadd(day, -7, max(end_time)) from {{ this }})
+        where end_time > (select dateadd(day, -3, max(end_time)) from {{ this }})
     {% endif %}
 ),
 
@@ -34,9 +34,9 @@ cost_per_query as (
     select *
     from {{ ref('cost_per_query') }}
     {% if is_incremental() %}
-        -- Conservatively re-process the last 7 days to account for late arriving rates data
+        -- Conservatively re-process the last 3 days to account for late arriving rates data
         -- which changes the cost per query
-        where end_time > (select dateadd(day, -7, max(end_time)) from {{ this }})
+        where end_time > (select dateadd(day, -3, max(end_time)) from {{ this }})
     {% endif %}
 )
 
@@ -44,6 +44,8 @@ select
     cost_per_query.query_id,
     cost_per_query.compute_cost,
     cost_per_query.compute_credits,
+    cost_per_query.query_acceleration_cost,
+    cost_per_query.query_acceleration_credits,
     cost_per_query.cloud_services_cost,
     cost_per_query.cloud_services_credits,
     cost_per_query.query_cost,

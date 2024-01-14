@@ -365,7 +365,7 @@ query_acceleration_spend_hourly as (
         hours.hour,
         'Query Acceleration' as service,
         null as storage_type,
-        null as warehouse_name,
+        stg_metering_history.name as warehouse_name,
         null as database_name,
         coalesce(
             sum(
