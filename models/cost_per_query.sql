@@ -80,22 +80,20 @@ credits_billed_hourly as (
     select
         start_time as hour,
         entity_id as warehouse_id,
-        sum(iff(service_type='WAREHOUSE_METERING', credits_used_compute, 0)) as credits_used_compute,
-        sum(iff(service_type='WAREHOUSE_METERING', credits_used_cloud_services, 0)) as credits_used_cloud_services,
-        sum(iff(service_type='QUERY_ACCELERATION', credits_used_compute, 0)) as credits_used_query_acceleration
+        sum(iff(service_type = 'WAREHOUSE_METERING', credits_used_compute, 0)) as credits_used_compute,
+        sum(iff(service_type = 'WAREHOUSE_METERING', credits_used_cloud_services, 0)) as credits_used_cloud_services,
+        sum(iff(service_type = 'QUERY_ACCELERATION', credits_used_compute, 0)) as credits_used_query_acceleration
     from {{ ref('stg_metering_history') }}
     where true
         and service_type in ('QUERY_ACCELERATION', 'WAREHOUSE_METERING')
-    group by 1,2
+    group by 1, 2
 ),
 
 query_cost as (
     select
         query_seconds_per_hour.*,
-
         credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour as allocated_compute_credits_in_hour,
         allocated_compute_credits_in_hour * daily_rates.effective_rate as allocated_compute_cost_in_hour,
-        
         credits_billed_hourly.credits_used_query_acceleration * query_seconds_per_hour.fraction_of_total_query_acceleration_bytes_scanned_in_hour as allocated_query_acceleration_credits_in_hour,
         allocated_query_acceleration_credits_in_hour * daily_rates.effective_rate as allocated_query_acceleration_cost_in_hour
     from query_seconds_per_hour
