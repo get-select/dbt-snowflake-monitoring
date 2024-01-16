@@ -51,7 +51,7 @@ select
 from {{ ref('query_history_enriched') }}
 where dbt_metadata is not null
     {% if is_incremental() %}
-        -- Conservatively re-process the last 3 days to account for late arriving rates data
-        -- which changes the cost per query
-        and end_time > (select dateadd(day, -3, max(end_time)) from {{ this }})
+        -- Conservatively re-process the last 3 days to account for late arriving rates data which changes the cost per query. 
+        -- Allow an override from project variable
+        and end_time > (select dateadd(day, -{{ var('dbt_snowflake_monitoring_incremental_days', '3') }}, max(end_time)) from {{ this }})
     {% endif %}
