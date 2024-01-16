@@ -1,4 +1,7 @@
-{{ config(materialized='incremental') }}
+{{ config(
+    materialized='incremental', 
+    unique_key=['start_time', 'warehouse_id'],
+) }}
 
 select
     start_time,
@@ -11,7 +14,8 @@ select
 from {{ source('snowflake_account_usage', 'warehouse_metering_history') }}
 
 {% if is_incremental() %}
-    where end_time > (select max(end_time) from {{ this }})
+    -- account for changing metering data
+    where end_time > (select coalesce(dateadd(day, -7, max(end_time)), '1970-01-01') from {{ this }})
 {% endif %}
 
 order by start_time
