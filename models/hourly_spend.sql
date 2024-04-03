@@ -128,7 +128,7 @@ compute_spend_hourly as (
         )
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'WAREHOUSE_METERING'
             and daily_rates.usage_type = 'compute'
     where
         stg_metering_history.service_type = 'WAREHOUSE_METERING' and stg_metering_history.name != 'CLOUD_SERVICES_ONLY'
@@ -155,7 +155,7 @@ serverless_task_spend_hourly as (
         hours.hour = date_trunc('hour', stg_serverless_task_history.start_time)
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'SERVERLESS_TASK'
             and daily_rates.usage_type = 'serverless tasks'
     group by 1, 2, 3, 4, 5
 ),
@@ -180,7 +180,7 @@ adj_for_incl_cloud_services_hourly as (
         hours.hour = stg_metering_daily_history.date
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'CLOUD_SERVICES'
             and daily_rates.usage_type = 'cloud services'
     group by 1, 2, 3, 4
 ),
@@ -243,7 +243,7 @@ cloud_services_spend_hourly as (
         _cloud_services_usage_hourly.date = _cloud_services_billed_daily.date
     left join {{ ref('daily_rates') }} as daily_rates
         on _cloud_services_usage_hourly.date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'CLOUD_SERVICES'
             and daily_rates.usage_type = 'cloud services'
 
 ),
@@ -271,7 +271,7 @@ automatic_clustering_spend_hourly as (
         and stg_metering_history.service_type = 'AUTO_CLUSTERING'
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'AUTOMATIC_CLUSTERING'
             and daily_rates.usage_type = 'automatic clustering'
     group by 1, 2, 3, 4
 ),
@@ -299,7 +299,7 @@ materialized_view_spend_hourly as (
         and stg_metering_history.service_type = 'MATERIALIZED_VIEW'
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'MATERIALIZED_VIEW'
             and daily_rates.usage_type = 'materialized views'
     group by 1, 2, 3, 4
 ),
@@ -327,7 +327,7 @@ snowpipe_spend_hourly as (
         and stg_metering_history.service_type = 'PIPE'
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'SNOWPIPE'
             and daily_rates.usage_type = 'snowpipe'
     group by 1, 2, 3, 4
 ),
@@ -355,7 +355,7 @@ snowpipe_streaming_spend_hourly as (
         and stg_metering_history.service_type = 'SNOWPIPE_STREAMING'
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'SNOWPIPE_STREAMING'
             and daily_rates.usage_type = 'snowpipe streaming'
     group by 1, 2, 3, 4
 ),
@@ -383,7 +383,7 @@ query_acceleration_spend_hourly as (
         and stg_metering_history.service_type = 'QUERY_ACCELERATION'
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'QUERY_ACCELERATION'
             and daily_rates.usage_type = 'query acceleration'
     group by 1, 2, 3, 4
 ),
@@ -411,7 +411,7 @@ replication_spend_hourly as (
         and stg_metering_history.service_type = 'REPLICATION'
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'REPLICATION'
             and daily_rates.usage_type = 'replication'
     group by 1, 2, 3, 4
 ),
@@ -439,7 +439,7 @@ search_optimization_spend_hourly as (
         and stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.service_type = 'SEARCH_OPTIMIZATION'
             and daily_rates.usage_type = 'search optimization'
     group by 1, 2, 3, 4
 ),
