@@ -12,3 +12,5 @@ models:
         description: Number of bytes of database storage used, including data in Time Travel.
       - name: average_failsafe_bytes
         description: Number of bytes of Fail-safe storage used.
+      - name: average_hybrid_table_storage_bytes
+        description: Number of bytes of hybrid storage used.
