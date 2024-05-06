@@ -33,7 +33,7 @@ jobs:
         run: tox -e integration_snowflake
 
       - name: Run Snowflake Tests
-        run: tox -e integration_snowflake
+        run: tox -e snowflake
 
   sqlfluff-lint-models:
     name: Lint dbt models using SQLFluff
