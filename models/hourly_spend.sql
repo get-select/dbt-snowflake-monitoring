@@ -217,8 +217,7 @@ logging_spend_hourly as (
 -- For now we just use the daily reported usage and evenly distribute it across the day
 -- More detailed information can be found on READER_ACCOUNT_USAGE.*
 {% set reader_usage_types = [
-    'reader compute', 'reader storage', 'reader cloud services',
-    'reader data transfer', 'reader adj for incl cloud services'
+    'reader compute', 'reader storage', 'reader data transfer'
 ] %}
 
 {%- for reader_usage_type in reader_usage_types %}
@@ -239,6 +238,42 @@ logging_spend_hourly as (
         and hours.hour::date = stg_usage_in_currency_daily.usage_date
 ),
 {% endfor %}
+
+reader_adj_for_incl_cloud_services_hourly as (
+    select
+        hours.hour,
+        INITCAP('reader adj for incl cloud services') as service,
+        null as storage_type,
+        null as warehouse_name,
+        null as database_name,
+        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        0 as spend_net_cloud_services,
+        stg_usage_in_currency_daily.currency as currency
+    from hours
+    left join {{ ref('stg_usage_in_currency_daily') }} as stg_usage_in_currency_daily on
+        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and stg_usage_in_currency_daily.usage_type = 'reader adj for incl cloud services'
+        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+),
+
+reader_cloud_services_hourly as (
+        select
+        hours.hour,
+        INITCAP('reader cloud services') as service,
+        null as storage_type,
+        null as warehouse_name,
+        null as database_name,
+        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) + reader_adj_for_incl_cloud_services_hourly.spend as spend_net_cloud_services,
+        stg_usage_in_currency_daily.currency as currency
+    from hours
+    left join {{ ref('stg_usage_in_currency_daily') }} on
+        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and stg_usage_in_currency_daily.usage_type = 'reader cloud services'
+        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+    left join reader_adj_for_incl_cloud_services_hourly on
+        hours.hour = reader_adj_for_incl_cloud_services_hourly.hour
+),
 
 compute_spend_hourly as (
     select
@@ -651,6 +686,10 @@ unioned as (
     select * from "{{ reader_usage_type }}_spend_hourly"
     union all
     {%- endfor %}
+    select * from reader_adj_for_incl_cloud_services_hourly
+    union all
+    select * from reader_cloud_services_hourly
+    union all
     select * from compute_spend_hourly
     union all
     select * from adj_for_incl_cloud_services_hourly
