@@ -50,14 +50,6 @@ storage_terabytes_daily as (
     union all
     select
         date,
-        'Hybrid Tables' as storage_type,
-        database_name,
-        sum(average_hybrid_table_storage_bytes) / power(1024, 4) as storage_terabytes
-    from {{ ref('stg_database_storage_usage_history') }}
-    group by 1, 2, 3
-    union all
-    select
-        date,
         'Stage' as storage_type,
         null as database_name,
         sum(average_stage_bytes) / power(1024, 4) as storage_terabytes
@@ -90,6 +82,73 @@ storage_spend_hourly as (
             and daily_rates.service_type = 'STORAGE'
             and daily_rates.usage_type = 'storage'
     group by 1, 2, 3, 4, 5
+),
+
+-- Hybrid Table Storage has its own service type in `usage_in_currency_daily`,
+-- so we also handle it separately, and not with "Storage".
+_hybrid_table_terabytes_daily as (
+    select
+        date,
+        null as storage_type,
+        database_name,
+        sum(average_hybrid_table_storage_bytes) / power(1024, 4) as storage_terabytes
+    from {{ ref('stg_database_storage_usage_history') }}
+    group by 1, 2, 3
+),
+
+hybrid_table_storage_spend_hourly as (
+    select
+        hours.hour,
+        'Hybrid Table Storage' as service,
+        null as storage_type,
+        null as warehouse_name,
+        _hybrid_table_terabytes_daily.database_name,
+        coalesce(
+            sum(
+                div0(
+                    _hybrid_table_terabytes_daily.storage_terabytes,
+                    hours.days_in_month * 24
+                ) * daily_rates.effective_rate
+            ),
+            0
+        ) as spend,
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
+    from hours
+    left join _hybrid_table_terabytes_daily on hours.date = convert_timezone('UTC', _hybrid_table_terabytes_daily.date)
+    left join {{ ref('daily_rates') }} as daily_rates
+        on _hybrid_table_terabytes_daily.date = daily_rates.date
+            and daily_rates.service_type = 'STORAGE'
+            and daily_rates.usage_type = 'hybrid table storage'
+    group by 1, 2, 3, 4, 5
+),
+
+hybrid_table_requests_spend_hourly as (
+    select
+        hours.hour,
+        'Hybrid Table Requests' as service,
+        null as storage_type,
+        null as warehouse_name,
+        null as database_name,
+        coalesce(
+            sum(
+                stg_metering_history.credits_used * daily_rates.effective_rate
+            ),
+            0
+        ) as spend,
+        spend as spend_net_cloud_services,
+        any_value(daily_rates.currency) as currency
+    from hours
+    left join {{ ref('stg_metering_history') }} as stg_metering_history on
+        hours.hour = convert_timezone(
+            'UTC', stg_metering_history.start_time
+        )
+        and stg_metering_history.service_type = 'HYBRID_TABLE_REQUESTS'
+    left join {{ ref('daily_rates') }} as daily_rates
+        on hours.hour::date = daily_rates.date
+            and daily_rates.service_type = 'COMPUTE'
+            and daily_rates.usage_type = 'hybrid table requests'
+    group by 1, 2, 3, 4
 ),
 
 data_transfer_spend_hourly as (
@@ -547,34 +606,6 @@ snowpark_container_services_spend_hourly as (
     group by 1, 2, 3, 4
 ),
 
-hybrid_table_requests_spend_hourly as (
-    select
-        hours.hour,
-        'Hybrid Table Requests' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'HYBRID_TABLE_REQUESTS'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COMPUTE'
-            and daily_rates.usage_type = 'hybrid table requests'
-    group by 1, 2, 3, 4
-),
-
 copy_files_spend_hourly as (
     select
         hours.hour,
@@ -607,6 +638,10 @@ copy_files_spend_hourly as (
 
 unioned as (
     select * from storage_spend_hourly
+    union all
+    select * from hybrid_table_storage_spend_hourly
+    union all
+    select * from hybrid_table_requests_spend_hourly
     union all
     select * from data_transfer_spend_hourly
     union all
@@ -641,8 +676,6 @@ unioned as (
     select * from serverless_task_spend_hourly
     union all
     select * from snowpark_container_services_spend_hourly
-    union all
-    select * from hybrid_table_requests_spend_hourly
     union all
     select * from copy_files_spend_hourly
 )

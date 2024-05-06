@@ -17,7 +17,7 @@ select
         -- Have recently seen new values introduced for one account: WAREHOUSE_METERING and CLOUD_SERVICES
         -- For now, we'll force these to either be COMPUTE or STORAGE since that's what the downstream models expect
         -- May adjust this in the future if Snowflake is permanently changing these fields for all accounts and starts offering different credit rates per usage_type
-        when service_type = 'STORAGE' then 'STORAGE'
+        when service_type in ('STORAGE', 'HYBRID_TABLE_STORAGE') then 'STORAGE'
         else 'COMPUTE'
     end as service_type
 from {{ source('snowflake_organization_usage', 'rate_sheet_daily') }}
