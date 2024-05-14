@@ -31,6 +31,20 @@ hours as (
     from hour_spine
 ),
 
+-- GROUP BY to collapse possible overage and non-overage cost from the same service in the
+-- same day into a single row so this model does not emit multiple rows for the same service
+-- and hour
+usage_in_currency_daily as (
+    select
+        usage_date,
+        account_locator,
+        replace(usage_type, 'overage-', '') as usage_type,
+        currency,
+        sum(usage_in_currency) as usage_in_currency,
+    from {{ ref('stg_usage_in_currency_daily') }}
+    group by all
+),
+
 storage_terabytes_daily as (
     select
         date,
@@ -163,14 +177,14 @@ data_transfer_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
-        stg_usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency
     from hours
-    left join {{ ref('stg_usage_in_currency_daily') }} as stg_usage_in_currency_daily on
-        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and stg_usage_in_currency_daily.usage_type = 'data transfer'
-        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+    left join usage_in_currency_daily on
+        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and usage_in_currency_daily.usage_type = 'data transfer'
+        and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
 ai_services_spend_hourly as (
@@ -184,14 +198,14 @@ ai_services_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
-        stg_usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency
     from hours
-    left join {{ ref('stg_usage_in_currency_daily') }} as stg_usage_in_currency_daily on
-        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and stg_usage_in_currency_daily.usage_type = 'ai services'
-        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+    left join usage_in_currency_daily on
+        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and usage_in_currency_daily.usage_type = 'ai services'
+        and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
 logging_spend_hourly as (
@@ -204,14 +218,14 @@ logging_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
-        stg_usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency
     from hours
-    left join {{ ref('stg_usage_in_currency_daily') }} as stg_usage_in_currency_daily on
-        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and stg_usage_in_currency_daily.usage_type = 'logging'
-        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+    left join usage_in_currency_daily on
+        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and usage_in_currency_daily.usage_type = 'logging'
+        and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
 -- For now we just use the daily reported usage and evenly distribute it across the day
@@ -228,14 +242,14 @@ logging_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
-        stg_usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency
     from hours
-    left join {{ ref('stg_usage_in_currency_daily') }} as stg_usage_in_currency_daily on
-        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and stg_usage_in_currency_daily.usage_type = '{{ reader_usage_type }}'
-        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+    left join usage_in_currency_daily on
+        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and usage_in_currency_daily.usage_type = '{{ reader_usage_type }}'
+        and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 {% endfor %}
 
@@ -246,14 +260,14 @@ reader_adj_for_incl_cloud_services_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         0 as spend_net_cloud_services,
-        stg_usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency
     from hours
-    left join {{ ref('stg_usage_in_currency_daily') }} as stg_usage_in_currency_daily on
-        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and stg_usage_in_currency_daily.usage_type = 'reader adj for incl cloud services'
-        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+    left join usage_in_currency_daily on
+        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and usage_in_currency_daily.usage_type = 'reader adj for incl cloud services'
+        and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
 reader_cloud_services_hourly as (
@@ -263,14 +277,14 @@ reader_cloud_services_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
-        coalesce(stg_usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) + reader_adj_for_incl_cloud_services_hourly.spend as spend_net_cloud_services,
-        stg_usage_in_currency_daily.currency as currency
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) + reader_adj_for_incl_cloud_services_hourly.spend as spend_net_cloud_services,
+        usage_in_currency_daily.currency as currency
     from hours
-    left join {{ ref('stg_usage_in_currency_daily') }} on
-        stg_usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and stg_usage_in_currency_daily.usage_type = 'reader cloud services'
-        and hours.hour::date = stg_usage_in_currency_daily.usage_date
+    left join usage_in_currency_daily on
+        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        and usage_in_currency_daily.usage_type = 'reader cloud services'
+        and hours.hour::date = usage_in_currency_daily.usage_date
     left join reader_adj_for_incl_cloud_services_hourly on
         hours.hour = reader_adj_for_incl_cloud_services_hourly.hour
 ),
