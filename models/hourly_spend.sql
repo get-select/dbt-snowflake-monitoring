@@ -31,11 +31,18 @@ hours as (
     from hour_spine
 ),
 
+-- GROUP BY to collapse possible overage and non-overage cost from the same service in the
+-- same day into a single row so this model does not emit multiple rows for the same service
+-- and hour
 usage_in_currency_daily as (
     select
-        * exclude(usage_type),
-        replace(usage_type, 'overage-', '') as usage_type
+        usage_date,
+        account_locator,
+        replace(usage_type, 'overage-', '') as usage_type,
+        currency,
+        sum(usage_in_currency) as usage_in_currency,
     from {{ ref('stg_usage_in_currency_daily') }}
+    group by all
 ),
 
 storage_terabytes_daily as (
