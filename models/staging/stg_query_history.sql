@@ -1,4 +1,7 @@
-{{ config(materialized='incremental') }}
+{{ config(
+    materialized='incremental',
+    unique_key=['query_id', 'start_time'],
+) }}
 
 select
     query_id,
