@@ -1,4 +1,7 @@
-{{ config(materialized='incremental') }}
+{{ config(
+    materialized='incremental',
+    unique_key=['query_id', 'start_time'],
+) }}
 
 select
     query_id,
@@ -72,7 +75,8 @@ from {{ source('snowflake_account_usage', 'query_history') }}
 
 {% if is_incremental() %}
     -- must use end time in case query hasn't completed
-    where end_time > (select max(end_time) from {{ this }})
+    -- add lookback window of 2 days to account for late arriving queries
+    where end_time > (select dateadd(day, -2, coalesce(max(end_time), '1970-01-01') ) from {{ this }})
 {% endif %}
 
 order by start_time

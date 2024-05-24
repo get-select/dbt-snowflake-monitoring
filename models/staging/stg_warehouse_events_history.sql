@@ -14,7 +14,7 @@ select
 from {{ source('snowflake_account_usage', 'warehouse_events_history') }}
 
 {% if is_incremental() %}
-    where timestamp > (select max(timestamp) from {{ this }})
+    where timestamp > (select coalesce(max(timestamp), '1970-01-01') from {{ this }})
 {% endif %}
 
 order by timestamp asc
