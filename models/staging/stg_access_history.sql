@@ -2,6 +2,8 @@
 
 select
     query_id,
+    parent_query_id,
+    root_query_id,
     query_start_time,
     user_name,
     direct_objects_accessed,
