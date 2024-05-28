@@ -5,6 +5,8 @@
 
 select
     query_id,
+    parent_query_id,
+    root_parent_id,
     query_text,
     database_id,
     database_name,
