@@ -1,0 +1,6 @@
+kind: Features
+body: Remove warehouse_cluster_status model
+time: 2024-06-09T17:32:47.794928-07:00
+custom:
+  Author: NiallRees
+  PR: "158"
