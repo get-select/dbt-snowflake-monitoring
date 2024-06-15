@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: stg_serverless_task_history
-    description: An incrementally materialized copy of the snowflake.account_usage.warehouse_metering_history view. See https://docs.snowflake.com/en/sql-reference/account-usage/serverless_task_history.html
+    description: An incrementally materialized copy of the snowflake.account_usage.serverless_task_history view. See https://docs.snowflake.com/en/sql-reference/account-usage/serverless_task_history.html
     columns:
       - name: start_time
         description: The date and beginning of the hour (in the UTC time zone) in which the serverless task took place.
@@ -12,6 +12,12 @@ models:
         description: Internal/system-generated identifier for the task.
       - name: task_name
         description: Name of the task.
+      - name: schema_id
+        description: Internal/system-generated identifier for the schema that contains the serverless task.
+      - name: schema_name
+        description: Name of the schema that contains the serverless task.
+      - name: database_id
+        description: Internal/system-generated identifier for the database that contains the serverless task.
       - name: database_name
         description: Name of the database in which the task is located.
       - name: credits_used
