@@ -12,8 +12,12 @@ select
     schema_name,
     query_type,
     session_id,
+    transaction_id,
     user_name,
     role_name,
+    role_type,
+    owner_role_type,
+    secondary_role_stats,
     warehouse_id,
     warehouse_name,
     warehouse_size,
@@ -33,6 +37,7 @@ select
     bytes_read_from_result,
     rows_produced,
     rows_inserted,
+    rows_written_to_result,
     rows_updated,
     rows_deleted,
     rows_unloaded,
@@ -70,7 +75,10 @@ select
     query_hash,
     query_hash_version,
     query_parameterized_hash,
-    query_parameterized_hash_version
+    query_parameterized_hash_version,
+    query_retry_time,
+    query_retry_cause,
+    fault_handling_time
 from {{ source('snowflake_account_usage', 'query_history') }}
 
 {% if is_incremental() %}

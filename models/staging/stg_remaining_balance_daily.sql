@@ -9,6 +9,7 @@ select
     free_usage_balance,
     capacity_balance,
     on_demand_consumption_balance,
-    rollover_balance
+    rollover_balance,
+    marketplace_capacity_drawdown_balance
 from {{ source('snowflake_organization_usage', 'remaining_balance_daily') }}
 order by date

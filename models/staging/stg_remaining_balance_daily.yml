@@ -20,3 +20,5 @@ models:
         description: The amount of consumption at on demand prices that will be invoiced given that all the free usage and capacity balances have been exhausted. This is a negative value (e.g. -250) until the invoice is paid. This is the end of day balance.
       - name: rollover_balance
         description: The amount of rollover balance in currency that is available for use at the end of the date. At the end of a contract term, it is calculated as sum(AMOUNT) from the CONTRACT_ITEMS view - sum(USAGE_IN_CURRENCY) from the USAGE_IN_CURRENCY_DAILY view.
+      - name: marketplace_capacity_drawdown_balance
+        description: Amount of CAPACITY_BALANCE that is available for purchases in the Snowflake Marketplace.

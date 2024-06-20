@@ -20,10 +20,19 @@ models:
         description: DML, query, etc. If the query failed, then the query type may be UNKNOWN.
       - name: session_id
         description: Session that executed the statement.
+      - name: transaction_id
+        description: ID of the transaction that contains the statement or 0 if the statement is not executed within a transaction.
       - name: user_name
         description: User who issued the query.
       - name: role_name
         description: Role that was active in the session at the time of the query.
+      - name: role_type
+        description: Specifies whether an APPLICATION, DATABASE_ROLE, or ROLE that executed the query.
+      - name: owner_role_type
+        description: The type of role that owns the object, either ROLE or DATABASE_ROLE. If a Snowflake Native App owns the object, the value is APPLICATION. Snowflake returns NULL if you delete the object because a deleted object does not have an owner role.
+      - name: secondary_role_stats
+        description: |
+          A JSON-formatted string that contains three fields regarding secondary roles that were evaluated in the query: a list of secondary roles or ALL depending on the session, a count of the number of secondary roles, and the internal/system-generated ID for each secondary role. The count and number of IDs have a maximum of 50.
       - name: warehouse_id
         description: Internal/system-generated identifier for the warehouse that was used.
       - name: warehouse_name
@@ -62,6 +71,8 @@ models:
         description: Number of rows produced by this statement.
       - name: rows_inserted
         description: Number of rows inserted by the query.
+      - name: rows_written_to_result
+        description: Number of rows written to a result object. For CREATE TABLE AS SELECT (CTAS) and all DML operations, this result is 1.
       - name: rows_updated
         description: Number of rows updated by the query.
       - name: rows_deleted
@@ -138,3 +149,9 @@ models:
         description: The hash value computed based on the parameterized query.
       - name: query_parameterized_hash_version
         description: The version of the logic used to compute QUERY_PARAMETERIZED_HASH.
+      - name: query_retry_time
+        description: Total execution time (in milliseconds) for query retries caused by actionable errors.
+      - name: query_retry_cause
+        description: Array of error messages for actionable errors. The array contains one error message for each query retry. If there is no query retry, the array is empty.
+      - name: fault_handling_time
+        description: Total execution time (in milliseconds) for query retries caused by errors that are not actionable.
