@@ -1,4 +1,6 @@
 # [dbt-snowflake-monitoring](https://select.dev/docs/dbt-snowflake-monitoring)
+## This repository is in experimental stage. It is NOT ready for production.
+### Changes are being made.
 
 From the [SELECT](https://select.dev) team, a dbt package to help you monitor Snowflake performance and costs.
 
