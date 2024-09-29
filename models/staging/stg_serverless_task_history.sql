@@ -1,7 +1,7 @@
 {{ config(
     materialized='incremental',
     unique_key=['start_time', 'task_id'],
-)  }}
+) }}
 
 select
     start_time,
