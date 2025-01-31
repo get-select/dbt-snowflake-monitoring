@@ -7,7 +7,7 @@ with hour_spine as (
         {% if stg_metering_history_relation %}
             {% set results = run_query("select coalesce(min(convert_timezone('UTC', start_time)), '2023-01-01 00:00:00') from " ~ ref('stg_metering_history')) %}
             {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
-            {% set results = run_query("select coalesce(dateadd(hour, 1, max(convert_timezone('UTC', start_time))), '2023-01-01 00:00:00') from " ~ ref('stg_metering_history')) %}
+            {% set results = run_query("select coalesce(dateadd(hour, 1, max(convert_timezone('UTC', start_time))), '2023-01-01 01:00:00') from " ~ ref('stg_metering_history')) %}
             {% set end_date = "'" ~ results.columns[0][0] ~ "'" %}
         {% else %}
             {% set start_date = "'2023-01-01 00:00:00'" %} {# this is just a dummy date for initial compilations before stg_metering_history exists #}
