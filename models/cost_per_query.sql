@@ -47,7 +47,7 @@ hours_list as (
     {% if is_incremental() %}
     from table(generator(rowcount => (24 * 7)))
     {% else %}
-    from table(generator(rowcount => (24 * 730)))
+    from table(generator(rowcount => (24 * 1095)))
     {% endif %}
 ),
 
