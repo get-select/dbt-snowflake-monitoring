@@ -70,7 +70,10 @@ select
     query_hash,
     query_hash_version,
     query_parameterized_hash,
-    query_parameterized_hash_version
+    query_parameterized_hash_version,
+    query_retry_time,
+    query_retry_cause,
+    fault_handling_time
 from {{ source('snowflake_account_usage', 'query_history') }}
 
 {% if is_incremental() %}
