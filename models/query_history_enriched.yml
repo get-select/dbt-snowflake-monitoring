@@ -197,3 +197,13 @@ models:
         description: Contains the original query text stripped of any comments.
       - name: dbt_metadata
         description: Metadata from the JSON string added to the query by dbt. Null if no metadata was added.
+      - name: query_retry_time_ms
+        description: Total execution time (in milliseconds) for query retries caused by actionable errors.
+      - name: query_retry_time_s
+        description: Total execution time (in seconds) for query retries caused by actionable errors.
+      - name: query_retry_cause
+        description: Error that caused the query to retry. If there is no query retry, the field is NULL.
+      - name: fault_handling_time_ms
+        description: Total execution time (in milliseconds) for query retries caused by errors that are not actionable.
+      - name: fault_handling_time_s
+        description: Total execution time (in seconds) for query retries caused by errors that are not actionable.
