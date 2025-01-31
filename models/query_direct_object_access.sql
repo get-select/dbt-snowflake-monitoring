@@ -54,7 +54,9 @@ with
         group by 1, 2, 3, 4, 5, 6
     )
 
-select md5(concat(query_id, object_name)) as _unique_id, *
+select
+md5(concat(query_id, object_name)) as _unique_id,
+*
 from access_history_flattened_w_columns
 qualify -- added by affinaquest to ensure uniqueness
     row_number() over (

@@ -144,7 +144,7 @@ select
     cost_per_query.currency,
     query_history.query_retry_time as query_retry_time_ms,
     query_history.query_retry_time / 1000 as query_retry_time_s,
-    query_history.query_retry_cause as query_retry_cause,
+    query_history.query_retry_cause,
     query_history.fault_handling_time as fault_handling_time_ms,
     query_history.fault_handling_time / 1000 as fault_handling_time_s
 

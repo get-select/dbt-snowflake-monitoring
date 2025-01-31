@@ -28,7 +28,7 @@ filtered_queries as (
         query_acceleration_bytes_scanned
     from {{ ref('stg_query_history') }}
     where true
-        and end_time <= (select latest_ts from stop_threshold)
+        and end_time <= (select stop_threshold.latest_ts from stop_threshold)
         {% if is_incremental() %}
         -- account for late arriving queries
         and end_time > (select coalesce(dateadd(day, -3, max(end_time)), '1970-01-01') from {{ this }})
@@ -39,7 +39,8 @@ hours_list as (
     select
         dateadd(
             'hour',
-            '-' || row_number() over (order by seq4() asc),
+            '-' || row_number() over (
+order by seq4() asc),
             dateadd('day', '+1', current_date::timestamp_tz)
         ) as hour_start,
         dateadd('hour', '+1', hour_start) as hour_end
