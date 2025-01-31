@@ -12,7 +12,7 @@ models:
         description: The statement start time (UTC time zone).
       - name: user_name
         description: The user who issued the query.
-      - name: table_name
+      - name: full_table_name
         description: Fully qualified table name, i.e. <database_name>.<schema_name>.<table_name>
       - name: table_id
         description: Unique identifier for the table
