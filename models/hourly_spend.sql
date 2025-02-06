@@ -518,7 +518,7 @@ query_acceleration_spend_hourly as (
 other_costs as (
     select
         hours.hour,
-        initcap(service_type) as service
+        initcap(replace(stg_metering_history.service_type, '_', ' ')) as service,
         null as storage_type,
         null as warehouse_name,
         null as database_name,
@@ -546,7 +546,9 @@ other_costs as (
         'PIPE', 'QUERY_ACCELERATION',
         'SERVERLESS_TASK', 'WAREHOUSE_METERING', 'WAREHOUSE_METERING_READER'
     )
-)
+
+    group by 1, 2, 3, 4
+),
 
 unioned as (
     select * from storage_spend_hourly
