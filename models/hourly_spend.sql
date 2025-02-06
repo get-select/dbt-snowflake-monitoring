@@ -137,34 +137,6 @@ hybrid_table_storage_spend_hourly as (
     group by 1, 2, 3, 4, 5
 ),
 
-hybrid_table_requests_spend_hourly as (
-    select
-        hours.hour,
-        'Hybrid Table Requests' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'HYBRID_TABLE_REQUESTS'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'HYBRID_TABLE_REQUESTS'
-            and daily_rates.usage_type = 'hybrid table requests'
-    group by 1, 2, 3, 4
-),
-
 data_transfer_spend_hourly as (
     -- Right now we don't have a way of getting this at an hourly grain
     -- We can get source cloud + region, target cloud + region, and bytes transferred at an hourly grain from DATA_TRANSFER_HISTORY
@@ -459,34 +431,6 @@ automatic_clustering_spend_hourly as (
     group by 1, 2, 3, 4
 ),
 
-materialized_view_spend_hourly as (
-    select
-        hours.hour,
-        'Materialized Views' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'MATERIALIZED_VIEW'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'MATERIALIZED_VIEW'
-            and daily_rates.usage_type = 'materialized views'
-    group by 1, 2, 3, 4
-),
-
 snowpipe_spend_hourly as (
     select
         hours.hour,
@@ -571,10 +515,10 @@ query_acceleration_spend_hourly as (
     group by 1, 2, 3, 4
 ),
 
-replication_spend_hourly as (
+other_costs as (
     select
         hours.hour,
-        'Replication' as service,
+        initcap(service_type) as service
         null as storage_type,
         null as warehouse_name,
         null as database_name,
@@ -586,109 +530,28 @@ replication_spend_hourly as (
         ) as spend,
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'REPLICATION'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'REPLICATION'
-            and daily_rates.usage_type = 'replication'
-    group by 1, 2, 3, 4
-),
 
-search_optimization_spend_hourly as (
-    select
-        hours.hour,
-        'Search Optimization' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'SEARCH_OPTIMIZATION'
-            and daily_rates.usage_type = 'search optimization'
-    group by 1, 2, 3, 4
-),
 
-snowpark_container_services_spend_hourly as (
-    select
-        hours.hour,
-        'Snowpark Container Services' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'SNOWPARK_CONTAINER_SERVICES'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'SNOWPARK_CONTAINER_SERVICES'
-            and daily_rates.usage_type = 'snowpark container services'
-    group by 1, 2, 3, 4
-),
+    left join {{ ref('stg_metering_history') }} as stg_metering_history
+        on hours.hour = convert_timezone('UTC', stg_metering_history.start_time)
 
-copy_files_spend_hourly as (
-    select
-        hours.hour,
-        'Copy Files' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'COPY_FILES'
     left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COPY_FILES'
-            and daily_rates.usage_type = 'copy files'
-    group by 1, 2, 3, 4
-),
+        on hour::date = daily_rates.date
+            and stg_metering_history.service_type = daily_rates.service_type
+
+    -- Already covered by other CTEs
+    where stg_metering_history.service_type not in (
+        'AI_SERVICES', 'AUTO_CLUSTERING',
+        'PIPE', 'QUERY_ACCELERATION',
+        'SERVERLESS_TASK', 'WAREHOUSE_METERING', 'WAREHOUSE_METERING_READER'
+    )
+)
 
 unioned as (
     select * from storage_spend_hourly
     union all
     select * from hybrid_table_storage_spend_hourly
-    union all
-    select * from hybrid_table_requests_spend_hourly
     union all
     select * from data_transfer_spend_hourly
     union all
@@ -712,23 +575,15 @@ unioned as (
     union all
     select * from automatic_clustering_spend_hourly
     union all
-    select * from materialized_view_spend_hourly
-    union all
     select * from snowpipe_spend_hourly
     union all
     select * from snowpipe_streaming_spend_hourly
     union all
     select * from query_acceleration_spend_hourly
     union all
-    select * from replication_spend_hourly
-    union all
-    select * from search_optimization_spend_hourly
-    union all
     select * from serverless_task_spend_hourly
     union all
-    select * from snowpark_container_services_spend_hourly
-    union all
-    select * from copy_files_spend_hourly
+    select * from other_costs
 )
 
 select
