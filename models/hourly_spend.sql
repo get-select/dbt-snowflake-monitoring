@@ -450,6 +450,11 @@ other_costs as (
     left join {{ ref('daily_rates') }} as daily_rates
         on hour::date = daily_rates.date
             and _service_renamed = daily_rates.service_type
+            /* daily_rates can have multiple rows for the same service_type,
+               with different values in usage_type (eg: usage_type = "automatic clustering" or
+               "adjustment-automatic clustering"). We want to join only with the row where
+               usage_type is the same as the service_type */
+            and lower(service) = daily_rates.usage_type
 
     -- Covered by their own CTEs due to more complex logic or better sources
     where stg_metering_history.service_type not in (
