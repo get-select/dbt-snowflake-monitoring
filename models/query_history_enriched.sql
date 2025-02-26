@@ -42,6 +42,11 @@ cost_per_query as (
 
 select
     cost_per_query.query_id,
+    {% if var('uses_org_view', false) %}
+    cost_per_query.organization_name,
+    cost_per_query.account_name,
+    cost_per_query.account_locator,
+    {% endif %}
     cost_per_query.compute_cost,
     cost_per_query.compute_credits,
     cost_per_query.query_acceleration_cost,

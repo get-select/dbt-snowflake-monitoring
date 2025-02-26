@@ -4,6 +4,11 @@
 ) }}
 
 select
+    {% if var('uses_org_view', false) %}
+    organization_name,
+    account_name,
+    account_locator,
+    {% endif %}
     query_id,
     query_text,
     database_id,

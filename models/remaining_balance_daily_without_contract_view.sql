@@ -1,6 +1,10 @@
 select
     date,
     organization_name,
+    {% if var('uses_org_view', false) %}
+    account_name,
+    account_locator,
+    {% endif %}
     currency,
     free_usage_balance,
     capacity_balance,
@@ -13,4 +17,4 @@ from {{ ref('stg_remaining_balance_daily') }}
     Assume the higher contract_number is more recent. Chose not to group by date and aggregate balances in
     case the currency changes..
 #}
-qualify row_number() over (partition by date order by contract_number desc nulls last) = 1
+qualify row_number() over (partition by account_name,date order by contract_number desc nulls last) = 1

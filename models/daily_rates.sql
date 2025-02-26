@@ -23,6 +23,11 @@ dates_base as (
 
 rate_sheet_daily_base as (
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         date,
         usage_type,
         currency,
@@ -52,6 +57,11 @@ date_range as (
 
 remaining_balance_daily as (
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         date,
         free_usage_balance + capacity_balance + on_demand_consumption_balance + rollover_balance as remaining_balance,
         remaining_balance < 0 as is_account_in_overage
@@ -60,20 +70,23 @@ remaining_balance_daily as (
 
 latest_remaining_balance_daily as (
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         date,
         remaining_balance,
         is_account_in_overage
     from remaining_balance_daily
-    qualify row_number() over (order by date desc) = 1
+    qualify row_number() over (order by account_name, date desc) = 1
 ),
-
 rate_sheet_daily as (
     select rate_sheet_daily_base.*
     from rate_sheet_daily_base
     inner join date_range
         on rate_sheet_daily_base.date between date_range.start_date and date_range.end_date
 ),
-
 rates_date_range_w_usage_types as (
     select
         date_range.start_date,
@@ -94,6 +107,11 @@ base as (
 
 rates_w_overage as (
     select
+        {% if var('uses_org_view', false) %}
+        base.organization_name,
+        base.account_name,
+        base.account_locator,
+        {% endif %}
         base.date,
         base.usage_type,
         coalesce(
@@ -131,6 +149,11 @@ rates_w_overage as (
 
 rates as (
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         date,
         usage_type,
         associated_usage_type,
@@ -143,6 +166,11 @@ rates as (
 )
 
 select
+    {% if var('uses_org_view', false) %}
+    organization_name,
+    account_name,
+    account_locator,
+    {% endif %}
     date,
     associated_usage_type as usage_type,
     service_type,

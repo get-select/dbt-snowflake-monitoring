@@ -3,6 +3,11 @@
 ) }}
 
 select
+    {% if var('uses_org_view', false) %}
+    organization_name,
+    account_name,
+    account_locator,
+    {% endif %}
     service_type,
     start_time,
     end_time,

@@ -1,4 +1,9 @@
 select
+    {% if var('uses_org_view', false) %}
+    organization_name,
+    account_name,
+    account_locator,
+    {% endif %}
     _unique_id,
     query_id,
     query_start_time,

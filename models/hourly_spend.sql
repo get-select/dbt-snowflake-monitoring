@@ -37,6 +37,10 @@ hours as (
 usage_in_currency_daily as (
     select
         usage_date,
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        {% endif %}
         account_locator,
         replace(usage_type, 'overage-', '') as usage_type,
         currency,
@@ -50,25 +54,41 @@ storage_terabytes_daily as (
         date,
         'Table and Time Travel' as storage_type,
         database_name,
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         sum(average_database_bytes) / power(1024, 4) as storage_terabytes
     from {{ ref('stg_database_storage_usage_history') }}
-    group by 1, 2, 3
+    group by all
     union all
     select
         date,
         'Failsafe' as storage_type,
         database_name,
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         sum(average_failsafe_bytes) / power(1024, 4) as storage_terabytes
     from {{ ref('stg_database_storage_usage_history') }}
-    group by 1, 2, 3
+    group by all
     union all
     select
         date,
         'Stage' as storage_type,
         null as database_name,
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         sum(average_stage_bytes) / power(1024, 4) as storage_terabytes
     from {{ ref('stg_stage_storage_usage_history') }}
-    group by 1, 2, 3
+    group by all
+),
 ),
 
 storage_spend_hourly as (
@@ -78,6 +98,11 @@ storage_spend_hourly as (
         storage_terabytes_daily.storage_type,
         null as warehouse_name,
         storage_terabytes_daily.database_name,
+        {% if var('uses_org_view', false) %}
+        storage_terabytes_daily.organization_name,
+        storage_terabytes_daily.account_name,
+        storage_terabytes_daily.account_locator,
+        {% endif %}
         coalesce(
             sum(
                 div0(
@@ -95,13 +120,23 @@ storage_spend_hourly as (
         on storage_terabytes_daily.date = daily_rates.date
             and daily_rates.service_type = 'STORAGE'
             and daily_rates.usage_type = 'storage'
-    group by 1, 2, 3, 4, 5
+            {% if var('uses_org_view', false) %}
+            and storage_terabytes_daily.organization_name = daily_rates.organization_name
+            and storage_terabytes_daily.account_name = daily_rates.account_name
+            and storage_terabytes_daily.account_locator = daily_rates.account_locator
+            {% endif %}
+    group by all
 ),
 
 -- Hybrid Table Storage has its own service type in `usage_in_currency_daily`,
 -- so we also handle it separately, and not with "Storage".
 _hybrid_table_terabytes_daily as (
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         date,
         null as storage_type,
         database_name,

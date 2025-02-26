@@ -11,6 +11,11 @@ stop_threshold as (
 
 filtered_queries as (
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         query_id,
         query_text as original_query_text,
         credits_used_cloud_services,
@@ -134,6 +139,11 @@ credits_billed_daily as (
 
 all_queries as (
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         query_id,
         start_time,
         end_time,
@@ -149,6 +159,11 @@ all_queries as (
     union all
 
     select
+        {% if var('uses_org_view', false) %}
+        organization_name,
+        account_name,
+        account_locator,
+        {% endif %}
         query_id,
         start_time,
         end_time,
@@ -165,6 +180,11 @@ all_queries as (
 )
 
 select
+    {% if var('uses_org_view', false) %}
+    all_queries.organization_name,
+    all_queries.account_name,
+    all_queries.account_locator,
+    {% endif %}
     all_queries.query_id,
     all_queries.start_time,
     all_queries.end_time,
