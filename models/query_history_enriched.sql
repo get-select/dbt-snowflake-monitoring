@@ -146,7 +146,12 @@ select
     query_history.transaction_blocked_time / 1000 as transaction_blocked_time_s,
     query_history.list_external_files_time / 1000 as list_external_files_time_s,
     query_history.execution_time / 1000 as execution_time_s,
-    cost_per_query.currency
+    cost_per_query.currency,
+    query_history.query_retry_time as query_retry_time_ms,
+    query_history.query_retry_time / 1000 as query_retry_time_s,
+    query_history.query_retry_cause,
+    query_history.fault_handling_time as fault_handling_time_ms,
+    query_history.fault_handling_time / 1000 as fault_handling_time_s
 
 from query_history
 inner join cost_per_query

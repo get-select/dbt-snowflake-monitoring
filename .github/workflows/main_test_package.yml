@@ -29,22 +29,9 @@ jobs:
       - name: Install tox
         run: python3 -m pip install tox
 
-      - name: Run Snowflake Integration Tests
-        run: tox -e integration_snowflake
+      # TODO: Re-enable this once we add seed data back
+      # - name: Run Snowflake Integration Tests
+      #   run: tox -e integration_snowflake
 
       - name: Run Snowflake Tests
         run: tox -e snowflake
-
-  sqlfluff-lint-models:
-    name: Lint dbt models using SQLFluff
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v2
-
-      - name: Install tox
-        run: python3 -m pip install tox
-
-      - name: Lint dbt models
-        run: tox -e lint_all

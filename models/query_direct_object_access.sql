@@ -1,18 +1,27 @@
-{{ config(
-    materialized='incremental',
-    unique_key=['_unique_id', 'query_start_time'],
-) }}
+{{
+    config(
+        materialized="incremental",
+        unique_key=["_unique_id", "query_start_time"],
+    )
+}}
 
 with
-access_history as (
-    select *
-    from {{ ref('stg_access_history') }}
+    access_history as (
+        select *
+        from {{ ref("stg_access_history") }}
 
-    {% if is_incremental() %}
-        where query_start_time > (select coalesce(dateadd('day', -1, max(query_start_time)), '1970-01-01') from {{ this }})
-    {% endif %}
+        {% if is_incremental() %}
+            where
+                query_start_time > (
+                    select
+                        coalesce(
+                            dateadd('day', -1, max(query_start_time)), '1970-01-01'
+                        )
+                    from {{ this }}
+                )
+        {% endif %}
 
-),
+    ),
 
 access_history_flattened as (
     select
@@ -29,8 +38,10 @@ access_history_flattened as (
         objects_accessed.value:objectDomain::text as object_domain,
         objects_accessed.value:columns as columns_array
 
-    from access_history, lateral flatten(access_history.direct_objects_accessed) as objects_accessed
-),
+        from
+            access_history,
+            lateral flatten(access_history.direct_objects_accessed) as objects_accessed
+    ),
 
 access_history_flattened_w_columns as (
     select
@@ -53,7 +64,13 @@ access_history_flattened_w_columns as (
 )
 
 select
-    md5(concat(query_id, object_name)) as _unique_id,
-    *
+md5(concat(query_id, object_name)) as _unique_id,
+*
 from access_history_flattened_w_columns
+qualify -- added by affinaquest to ensure uniqueness
+    row_number() over (
+        partition by md5(concat(query_id, object_name)), query_start_time
+        order by query_start_time asc
+    )
+    = 1
 order by query_start_time asc

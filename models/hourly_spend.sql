@@ -5,9 +5,9 @@ with hour_spine as (
     {% if execute %}
 {% set stg_metering_history_relation = load_relation(ref('stg_metering_history')) %}
         {% if stg_metering_history_relation %}
-            {% set results = run_query("select min(convert_timezone('UTC', start_time)) from " ~ ref('stg_metering_history')) %}
+            {% set results = run_query("select coalesce(min(convert_timezone('UTC', start_time)), '2023-01-01 00:00:00') from " ~ ref('stg_metering_history')) %}
             {% set start_date = "'" ~ results.columns[0][0] ~ "'" %}
-            {% set results = run_query("select dateadd(hour, 1, max(convert_timezone('UTC', start_time))) from " ~ ref('stg_metering_history')) %}
+            {% set results = run_query("select coalesce(dateadd(hour, 1, max(convert_timezone('UTC', start_time))), '2023-01-01 01:00:00') from " ~ ref('stg_metering_history')) %}
             {% set end_date = "'" ~ results.columns[0][0] ~ "'" %}
         {% else %}
             {% set start_date = "'2023-01-01 00:00:00'" %} {# this is just a dummy date for initial compilations before stg_metering_history exists #}
@@ -170,34 +170,6 @@ hybrid_table_storage_spend_hourly as (
             and daily_rates.service_type = 'HYBRID_TABLE_STORAGE'
             and daily_rates.usage_type = 'hybrid table storage'
     group by 1, 2, 3, 4, 5
-),
-
-hybrid_table_requests_spend_hourly as (
-    select
-        hours.hour,
-        'Hybrid Table Requests' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'HYBRID_TABLE_REQUESTS'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'HYBRID_TABLE_REQUESTS'
-            and daily_rates.usage_type = 'hybrid table requests'
-    group by 1, 2, 3, 4
 ),
 
 data_transfer_spend_hourly as (
@@ -466,125 +438,36 @@ cloud_services_spend_hourly as (
 
 ),
 
-automatic_clustering_spend_hourly as (
+other_costs as (
     select
         hours.hour,
-        'Automatic Clustering' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'AUTO_CLUSTERING'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'AUTOMATIC_CLUSTERING'
-            and daily_rates.usage_type = 'automatic clustering'
-    group by 1, 2, 3, 4
-),
 
-materialized_view_spend_hourly as (
-    select
-        hours.hour,
-        'Materialized Views' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'MATERIALIZED_VIEW'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'MATERIALIZED_VIEW'
-            and daily_rates.usage_type = 'materialized views'
-    group by 1, 2, 3, 4
-),
+        /* Sometimes Snowflake is inconsistent and the service names in metering_history
+           do not match the service names in our daily_rates (coming from rate_sheet_daily),
+           so we rename them to make it match  */
+        case stg_metering_history.service_type
+            when 'AUTO_CLUSTERING' then 'AUTOMATIC_CLUSTERING'
+            when 'PIPE' then 'SNOWPIPE'
+            else stg_metering_history.service_type
+        end as _service_renamed,
 
-snowpipe_spend_hourly as (
-    select
-        hours.hour,
-        'Snowpipe' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'PIPE'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'SNOWPIPE'
-            and daily_rates.usage_type = 'snowpipe'
-    group by 1, 2, 3, 4
-),
+        /* Convert it to a more human-readable format
+           AUTOMATIC_CLUSTERING -> Automatic Clustering
+        */
+        case _service_renamed
+            when 'MATERIALIZED_VIEW' then 'Materialized Views'
+            else initcap(replace(_service_renamed, '_', ' '))
+        end as service,
 
-snowpipe_streaming_spend_hourly as (
-    select
-        hours.hour,
-        'Snowpipe Streaming' as service,
+        /* Extract useful information from the row depending on the service type */
         null as storage_type,
-        null as warehouse_name,
+        case
+            when stg_metering_history.service_type = 'QUERY_ACCELERATION'
+                then stg_metering_history.name
+            else null
+        end as warehouse_name,
         null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'SNOWPIPE_STREAMING'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'SNOWPIPE_STREAMING'
-            and daily_rates.usage_type = 'snowpipe streaming'
-    group by 1, 2, 3, 4
-),
 
-query_acceleration_spend_hourly as (
-    select
-        hours.hour,
-        'Query Acceleration' as service,
-        null as storage_type,
-        stg_metering_history.name as warehouse_name,
-        null as database_name,
         coalesce(
             sum(
                 stg_metering_history.credits_used * daily_rates.effective_rate
@@ -593,137 +476,33 @@ query_acceleration_spend_hourly as (
         ) as spend,
         spend as spend_net_cloud_services,
         any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'QUERY_ACCELERATION'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'QUERY_ACCELERATION'
-            and daily_rates.usage_type = 'query acceleration'
-    group by 1, 2, 3, 4
-),
 
-replication_spend_hourly as (
-    select
-        hours.hour,
-        'Replication' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
     from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'REPLICATION'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'REPLICATION'
-            and daily_rates.usage_type = 'replication'
-    group by 1, 2, 3, 4
-),
 
-search_optimization_spend_hourly as (
-    select
-        hours.hour,
-        'Search Optimization' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'SEARCH_OPTIMIZATION'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'SEARCH_OPTIMIZATION'
-            and daily_rates.usage_type = 'search optimization'
-    group by 1, 2, 3, 4
-),
+    left join {{ ref('stg_metering_history') }} as stg_metering_history
+        on hours.hour = convert_timezone('UTC', stg_metering_history.start_time)
 
-snowpark_container_services_spend_hourly as (
-    select
-        hours.hour,
-        'Snowpark Container Services' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'SNOWPARK_CONTAINER_SERVICES'
     left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'SNOWPARK_CONTAINER_SERVICES'
-            and daily_rates.usage_type = 'snowpark container services'
-    group by 1, 2, 3, 4
-),
+        on hour::date = daily_rates.date
+            and _service_renamed = daily_rates.service_type
+            /* daily_rates can have multiple rows for the same service_type,
+               with different values in usage_type (eg: usage_type = "automatic clustering" or
+               "adjustment-automatic clustering"). We want to join only with the row where
+               usage_type is the same as the service_type */
+            and lower(service) = daily_rates.usage_type
 
-copy_files_spend_hourly as (
-    select
-        hours.hour,
-        'Copy Files' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(
-            sum(
-                stg_metering_history.credits_used * daily_rates.effective_rate
-            ),
-            0
-        ) as spend,
-        spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
-    from hours
-    left join {{ ref('stg_metering_history') }} as stg_metering_history on
-        hours.hour = convert_timezone(
-            'UTC', stg_metering_history.start_time
-        )
-        and stg_metering_history.service_type = 'COPY_FILES'
-    left join {{ ref('daily_rates') }} as daily_rates
-        on hours.hour::date = daily_rates.date
-            and daily_rates.service_type = 'COPY_FILES'
-            and daily_rates.usage_type = 'copy files'
-    group by 1, 2, 3, 4
+    -- Covered by their own CTEs due to more complex logic or better sources
+    where stg_metering_history.service_type not in (
+        'AI_SERVICES', 'SERVERLESS_TASK', 'WAREHOUSE_METERING', 'WAREHOUSE_METERING_READER'
+    )
+
+    group by 1, 2, 3, 4, 5
 ),
 
 unioned as (
     select * from storage_spend_hourly
     union all
     select * from hybrid_table_storage_spend_hourly
-    union all
-    select * from hybrid_table_requests_spend_hourly
     union all
     select * from data_transfer_spend_hourly
     union all
@@ -745,25 +524,9 @@ unioned as (
     union all
     select * from cloud_services_spend_hourly
     union all
-    select * from automatic_clustering_spend_hourly
-    union all
-    select * from materialized_view_spend_hourly
-    union all
-    select * from snowpipe_spend_hourly
-    union all
-    select * from snowpipe_streaming_spend_hourly
-    union all
-    select * from query_acceleration_spend_hourly
-    union all
-    select * from replication_spend_hourly
-    union all
-    select * from search_optimization_spend_hourly
-    union all
     select * from serverless_task_spend_hourly
     union all
-    select * from snowpark_container_services_spend_hourly
-    union all
-    select * from copy_files_spend_hourly
+    select * exclude (_service_renamed) from other_costs
 )
 
 select
