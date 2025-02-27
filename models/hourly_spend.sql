@@ -159,27 +159,6 @@ data_transfer_spend_hourly as (
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
-ai_services_spend_hourly as (
-    -- Snowflake's documentation states that AI Services costs should be in the METERING_HISTORY view,
-    -- https://docs.snowflake.com/en/sql-reference/account-usage/metering_history
-    -- but it doesn't appear to be the case yet.
-    -- So for now we just use the daily reported usage and evenly distribute it across the day
-    select
-        hours.hour,
-        'AI Services' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
-        spend as spend_net_cloud_services,
-        usage_in_currency_daily.currency as currency
-    from hours
-    left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and usage_in_currency_daily.usage_type = 'ai services'
-        and hours.hour::date = usage_in_currency_daily.usage_date
-),
-
 logging_spend_hourly as (
     -- More granular cost information is available in the EVENT_USAGE_HISTORY view.
     -- https://docs.snowflake.com/en/developer-guide/logging-tracing/logging-tracing-billing
@@ -421,6 +400,7 @@ other_costs as (
         */
         case _service_renamed
             when 'MATERIALIZED_VIEW' then 'Materialized Views'
+            when 'AI_SERVICES' then 'AI Services'
             else initcap(replace(_service_renamed, '_', ' '))
         end as service,
 
@@ -458,7 +438,7 @@ other_costs as (
 
     -- Covered by their own CTEs due to more complex logic or better sources
     where stg_metering_history.service_type not in (
-        'AI_SERVICES', 'SERVERLESS_TASK', 'WAREHOUSE_METERING', 'WAREHOUSE_METERING_READER'
+        'SERVERLESS_TASK', 'WAREHOUSE_METERING', 'WAREHOUSE_METERING_READER'
     )
 
     group by 1, 2, 3, 4, 5
@@ -470,8 +450,6 @@ unioned as (
     select * from hybrid_table_storage_spend_hourly
     union all
     select * from data_transfer_spend_hourly
-    union all
-    select * from ai_services_spend_hourly
     union all
     select * from logging_spend_hourly
     union all
