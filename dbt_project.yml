@@ -15,4 +15,5 @@ models:
   +on_schema_change: "append_new_columns"
 
 vars:
-  uses_org_view: false  # default to false 
+  dbt_snowflake_monitoring:
+    uses_org_view: false  # default to false 
