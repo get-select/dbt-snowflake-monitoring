@@ -130,9 +130,9 @@ _hybrid_table_terabytes_daily as (
 hybrid_table_storage_spend_hourly as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        _hybrid_table_terabytes_daily.organization_name,
+        _hybrid_table_terabytes_daily.account_name,
+        _hybrid_table_terabytes_daily.account_locator,
         'Hybrid Table Storage' as service,
         null as storage_type,
         null as warehouse_name,
@@ -154,7 +154,8 @@ hybrid_table_storage_spend_hourly as (
         on _hybrid_table_terabytes_daily.date = daily_rates.date
             and daily_rates.service_type = 'HYBRID_TABLE_STORAGE'
             and daily_rates.usage_type = 'hybrid table storage'
-    group by 1, 2, 3, 4, 5
+            and _hybrid_table_terabytes_daily.account_name = daily_rates.account_name
+    group by 1, 2, 3, 4, 5, 6, 7, 8
 ),
 
 data_transfer_spend_hourly as (
@@ -302,16 +303,16 @@ reader_cloud_services_hourly as (
 compute_spend_hourly as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        stg_warehouse_metering_history.organization_name,
+        stg_warehouse_metering_history.account_name,
+        stg_warehouse_metering_history.account_locator,
         'Compute' as service,
         null as storage_type,
-        stg_metering_history.name as warehouse_name,
+        stg_warehouse_metering_history.warehouse_name,
         null as database_name,
         coalesce(
             sum(
-                stg_metering_history.credits_used_compute * daily_rates.effective_rate
+                stg_warehouse_metering_history.credits_used_compute * daily_rates.effective_rate
             ),
             0
         ) as spend,
@@ -326,9 +327,10 @@ compute_spend_hourly as (
         on hours.hour::date = daily_rates.date
             and daily_rates.service_type = 'WAREHOUSE_METERING'
             and daily_rates.usage_type = 'compute'
+            and stg_warehouse_metering_history.account_name = daily_rates.account_name
     where
-        stg_warehouse_metering_history.service_type = 'WAREHOUSE_METERING' --and stg_warehouse_metering_history.name != 'CLOUD_SERVICES_ONLY'
-    group by 1, 2, 3, 4
+        stg_warehouse_metering_history.service_type = 'WAREHOUSE_METERING'
+    group by 1, 2, 3, 4, 5, 6, 7, 8
 ),
 
 serverless_task_spend_hourly as (
@@ -354,9 +356,9 @@ serverless_task_spend_hourly as (
 adj_for_incl_cloud_services_hourly as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        stg_metering_daily_history.organization_name,
+        stg_metering_daily_history.account_name,
+        stg_metering_daily_history.account_locator,
         'Adj For Incl Cloud Services' as service,
         null as storage_type,
         null as warehouse_name,
@@ -376,7 +378,8 @@ adj_for_incl_cloud_services_hourly as (
         on hours.hour::date = daily_rates.date
             and daily_rates.service_type = 'CLOUD_SERVICES'
             and daily_rates.usage_type = 'cloud services'
-    group by 1, 2, 3, 4
+            and stg_metering_daily_history.account_name = daily_rates.account_name
+    group by 1, 2, 3, 4, 5, 6, 7, 8
 ),
 
 _cloud_services_usage_hourly as (
@@ -424,7 +427,6 @@ cloud_services_spend_hourly as (
         _cloud_services_usage_hourly.warehouse_name,
         _cloud_services_usage_hourly.database_name,
         _cloud_services_usage_hourly.credits_used_cloud_services * daily_rates.effective_rate as spend,
-
         (
             div0(
                 _cloud_services_usage_hourly.credits_used_cloud_services,
@@ -439,7 +441,7 @@ cloud_services_spend_hourly as (
         on _cloud_services_usage_hourly.date = daily_rates.date
             and daily_rates.service_type = 'CLOUD_SERVICES'
             and daily_rates.usage_type = 'cloud services'
-
+            and _cloud_services_usage_hourly.account_name = daily_rates.account_name
 ),
 
 other_costs as (
