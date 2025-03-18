@@ -82,7 +82,7 @@ query_seconds_per_hour as (
     from query_hours
 ),
 
-{{ if var('uses_org_view', false) }}
+{% if var('uses_org_view', false) %}
 credits_billed_hourly as (
     select
         start_time as hour,
@@ -97,7 +97,7 @@ credits_billed_hourly as (
         and service_type = 'WAREHOUSE_METERING'
     group by 1, 2, 3, 4, 5
 ),
-{{ else }}
+{% else %}
 credits_billed_hourly as (
     select
         start_time as hour,
@@ -110,7 +110,7 @@ credits_billed_hourly as (
         and service_type in ('QUERY_ACCELERATION', 'WAREHOUSE_METERING')
     group by 1, 2
 ),
-{{ end }}
+{% endif %}
 
 query_cost as (
     select
@@ -227,12 +227,13 @@ select
     -- this may change if cloud credits make up >10% of compute cost.
     (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as cloud_services_cost,
     div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services as cloud_services_credits,
-    {{ if var('uses_org_view', false) }}
+    {% if var('uses_org_view', false) %}
     all_queries.compute_cost + cloud_services_cost as query_cost,
     all_queries.compute_credits + cloud_services_credits as query_credits,
-    {{ else }}
+    {% else %}
     all_queries.compute_cost + all_queries.query_acceleration_cost + cloud_services_cost as query_cost,
     all_queries.compute_credits + all_queries.query_acceleration_credits + cloud_services_credits as query_credits,
+    {% endif %}
     all_queries.ran_on_warehouse,
     coalesce(daily_rates.currency, current_rates.currency) as currency
 from all_queries
