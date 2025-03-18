@@ -1,4 +1,7 @@
-{{ config(materialized='table') }}
+{{ config(
+    materialized='table',
+    enabled=var('uses_org_view', false)
+) }}
 
 with hour_spine as (
     {% if execute %}
@@ -182,29 +185,6 @@ data_transfer_spend_hourly as (
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
--- ai_services_spend_hourly as (
---     -- Snowflake's documentation states that AI Services costs should be in the METERING_HISTORY view,
---     -- https://docs.snowflake.com/en/sql-reference/account-usage/metering_history
---     -- but it doesn't appear to be the case yet.
---     -- So for now we just use the daily reported usage and evenly distribute it across the day
---     select
---         hours.hour,
---         usage_in_currency_daily.organization_name,
---         usage_in_currency_daily.account_name,
---         usage_in_currency_daily.account_locator,
---         'AI Services' as service,
---         null as storage_type,
---         null as warehouse_name,
---         null as database_name,
---         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
---         spend as spend_net_cloud_services,
---         usage_in_currency_daily.currency as currency
---     from hours
---     left join usage_in_currency_daily
---         on usage_in_currency_daily.usage_type = 'ai services'
---         and hours.hour::date = usage_in_currency_daily.usage_date
--- ),
-
 logging_spend_hourly as (
     -- More granular cost information is available in the EVENT_USAGE_HISTORY view.
     -- https://docs.snowflake.com/en/developer-guide/logging-tracing/logging-tracing-billing
@@ -322,8 +302,6 @@ compute_spend_hourly as (
             and daily_rates.service_type = 'WAREHOUSE_METERING'
             and daily_rates.usage_type = 'compute'
             and stg_warehouse_metering_history.account_name = daily_rates.account_name
-    where
-        stg_warehouse_metering_history.service_type = 'WAREHOUSE_METERING'
     group by 1, 2, 3, 4, 5, 6, 7, 8
 ),
 
@@ -457,7 +435,7 @@ other_costs as (
     left join usage_in_currency_daily on
         hours.hour::date = usage_in_currency_daily.usage_date
         and usage_in_currency_daily.usage_type not in (
-            'ai services', 'serverless tasks', 'compute', 'cloud services',
+            'serverless tasks', 'compute', 'cloud services',
             'storage', 'data transfer', 'logging', 'hybrid table storage',
             'reader compute', 'reader storage', 'reader data transfer',
             'reader cloud services', 'reader adj for incl cloud services'
@@ -471,8 +449,6 @@ unioned as (
     union all
     select * from data_transfer_spend_hourly
     union all
-    -- select * from ai_services_spend_hourly
-    -- union all
     select * from logging_spend_hourly
     union all
     {%- for reader_usage_type in reader_usage_types %}
