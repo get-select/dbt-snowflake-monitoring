@@ -84,13 +84,13 @@ storage_terabytes_daily as (
 storage_spend_hourly as (
     select
         hours.hour,
+        storage_terabytes_daily.organization_name,
+        storage_terabytes_daily.account_name,
+        storage_terabytes_daily.account_locator,
         'Storage' as service,
         storage_terabytes_daily.storage_type,
         null as warehouse_name,
         storage_terabytes_daily.database_name,
-        storage_terabytes_daily.organization_name,
-        storage_terabytes_daily.account_name,
-        storage_terabytes_daily.account_locator,
         coalesce(
             sum(
                 div0(
@@ -116,15 +116,15 @@ storage_spend_hourly as (
 -- so we also handle it separately, and not with "Storage".
 _hybrid_table_terabytes_daily as (
     select
+        date,
         organization_name,
         account_name,
         account_locator,
-        date,
         null as storage_type,
         database_name,
         sum(average_hybrid_table_storage_bytes) / power(1024, 4) as storage_terabytes
     from {{ ref('stg_database_storage_usage_history') }}
-    group by 1, 2, 3
+    group by 1, 2, 3, 4, 5, 6
 ),
 
 hybrid_table_storage_spend_hourly as (
@@ -166,9 +166,9 @@ data_transfer_spend_hourly as (
     -- So for now we just use the daily reported usage and evenly distribute it across the day
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         'Data Transfer' as service,
         null as storage_type,
         null as warehouse_name,
@@ -177,35 +177,33 @@ data_transfer_spend_hourly as (
         spend as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency
     from hours
-    left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = account_locator
-        and usage_in_currency_daily.usage_type = 'data transfer'
+    left join usage_in_currency_daily
+        on usage_in_currency_daily.usage_type = 'data transfer'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
-ai_services_spend_hourly as (
-    -- Snowflake's documentation states that AI Services costs should be in the METERING_HISTORY view,
-    -- https://docs.snowflake.com/en/sql-reference/account-usage/metering_history
-    -- but it doesn't appear to be the case yet.
-    -- So for now we just use the daily reported usage and evenly distribute it across the day
-    select
-        hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
-        'AI Services' as service,
-        null as storage_type,
-        null as warehouse_name,
-        null as database_name,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
-        spend as spend_net_cloud_services,
-        usage_in_currency_daily.currency as currency
-    from hours
-    left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = account_locator
-        and usage_in_currency_daily.usage_type = 'ai services'
-        and hours.hour::date = usage_in_currency_daily.usage_date
-),
+-- ai_services_spend_hourly as (
+--     -- Snowflake's documentation states that AI Services costs should be in the METERING_HISTORY view,
+--     -- https://docs.snowflake.com/en/sql-reference/account-usage/metering_history
+--     -- but it doesn't appear to be the case yet.
+--     -- So for now we just use the daily reported usage and evenly distribute it across the day
+--     select
+--         hours.hour,
+--         usage_in_currency_daily.organization_name,
+--         usage_in_currency_daily.account_name,
+--         usage_in_currency_daily.account_locator,
+--         'AI Services' as service,
+--         null as storage_type,
+--         null as warehouse_name,
+--         null as database_name,
+--         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+--         spend as spend_net_cloud_services,
+--         usage_in_currency_daily.currency as currency
+--     from hours
+--     left join usage_in_currency_daily
+--         on usage_in_currency_daily.usage_type = 'ai services'
+--         and hours.hour::date = usage_in_currency_daily.usage_date
+-- ),
 
 logging_spend_hourly as (
     -- More granular cost information is available in the EVENT_USAGE_HISTORY view.
@@ -213,9 +211,9 @@ logging_spend_hourly as (
     -- For now we just use the daily reported usage and evenly distribute it across the day
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         'Logging' as service,
         null as storage_type,
         null as warehouse_name,
@@ -224,9 +222,8 @@ logging_spend_hourly as (
         spend as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency
     from hours
-    left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = account_locator
-        and usage_in_currency_daily.usage_type = 'logging'
+    left join usage_in_currency_daily
+        on usage_in_currency_daily.usage_type = 'logging'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
@@ -240,9 +237,9 @@ logging_spend_hourly as (
 "{{ reader_usage_type }}_spend_hourly" as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         INITCAP('{{ reader_usage_type }}') as service,
         null as storage_type,
         null as warehouse_name,
@@ -252,8 +249,7 @@ logging_spend_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = account_locator
-        and usage_in_currency_daily.usage_type = '{{ reader_usage_type }}'
+        usage_in_currency_daily.usage_type = '{{ reader_usage_type }}'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 {% endfor %}
@@ -261,9 +257,9 @@ logging_spend_hourly as (
 reader_adj_for_incl_cloud_services_hourly as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         INITCAP('reader adj for incl cloud services') as service,
         null as storage_type,
         null as warehouse_name,
@@ -273,17 +269,16 @@ reader_adj_for_incl_cloud_services_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = account_locator
-        and usage_in_currency_daily.usage_type = 'reader adj for incl cloud services'
+        usage_in_currency_daily.usage_type = 'reader adj for incl cloud services'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
 
 reader_cloud_services_hourly as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         INITCAP('reader cloud services') as service,
         null as storage_type,
         null as warehouse_name,
@@ -293,8 +288,7 @@ reader_cloud_services_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = {{ account_locator() }}
-        and usage_in_currency_daily.usage_type = 'reader cloud services'
+        usage_in_currency_daily.usage_type = 'reader cloud services'
         and hours.hour::date = usage_in_currency_daily.usage_date
     left join reader_adj_for_incl_cloud_services_hourly on
         hours.hour = reader_adj_for_incl_cloud_services_hourly.hour
@@ -336,9 +330,9 @@ compute_spend_hourly as (
 serverless_task_spend_hourly as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         'Serverless Tasks' as service,
         null as storage_type,
         null as warehouse_name,
@@ -350,7 +344,6 @@ serverless_task_spend_hourly as (
     left join usage_in_currency_daily on
         usage_in_currency_daily.usage_type = 'serverless tasks'
         and hours.hour::date = usage_in_currency_daily.usage_date
-    group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 ),
 
 adj_for_incl_cloud_services_hourly as (
@@ -373,7 +366,7 @@ adj_for_incl_cloud_services_hourly as (
         any_value(daily_rates.currency) as currency
     from hours
     left join {{ ref('stg_metering_daily_history') }} as stg_metering_daily_history on
-        hours.hour = stg_metering_daily_history.date
+        hours.hour::date = stg_metering_daily_history.date
     left join {{ ref('daily_rates') }} as daily_rates
         on hours.hour::date = daily_rates.date
             and daily_rates.service_type = 'CLOUD_SERVICES'
@@ -386,9 +379,9 @@ _cloud_services_usage_hourly as (
     select
         hours.hour,
         hours.date,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         'Cloud Services' as service,
         null as storage_type,
         null as warehouse_name,
@@ -400,12 +393,12 @@ _cloud_services_usage_hourly as (
     left join usage_in_currency_daily on
         hours.hour::date = usage_in_currency_daily.usage_date
         and usage_in_currency_daily.usage_type = 'cloud services'
-    group by 1, 2, 3, 4, 5, 6, 7, 8, 9
 ),
 
 _cloud_services_billed_daily as (
     select
         date,
+        account_name,
         sum(credits_used_cloud_services) as credits_used_cloud_services,
         sum(
             credits_used_cloud_services + credits_adjustment_cloud_services
@@ -413,7 +406,7 @@ _cloud_services_billed_daily as (
     from {{ ref('stg_metering_daily_history') }}
     where
         service_type = 'WAREHOUSE_METERING'
-    group by 1
+    group by 1, 2
 ),
 
 cloud_services_spend_hourly as (
@@ -437,6 +430,7 @@ cloud_services_spend_hourly as (
     from _cloud_services_usage_hourly
     inner join _cloud_services_billed_daily on
         _cloud_services_usage_hourly.date = _cloud_services_billed_daily.date
+        and _cloud_services_usage_hourly.account_name = _cloud_services_billed_daily.account_name
     left join {{ ref('daily_rates') }} as daily_rates
         on _cloud_services_usage_hourly.date = daily_rates.date
             and daily_rates.service_type = 'CLOUD_SERVICES'
@@ -447,9 +441,9 @@ cloud_services_spend_hourly as (
 other_costs as (
     select
         hours.hour,
-        organization_name,
-        account_name,
-        account_locator,
+        usage_in_currency_daily.organization_name,
+        usage_in_currency_daily.account_name,
+        usage_in_currency_daily.account_locator,
         initcap(usage_in_currency_daily.usage_type) as service,
         null as storage_type,
         null as warehouse_name,
@@ -468,7 +462,6 @@ other_costs as (
             'reader compute', 'reader storage', 'reader data transfer',
             'reader cloud services', 'reader adj for incl cloud services'
         )
-    group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 ),
 
 unioned as (
@@ -478,8 +471,8 @@ unioned as (
     union all
     select * from data_transfer_spend_hourly
     union all
-    select * from ai_services_spend_hourly
-    union all
+    -- select * from ai_services_spend_hourly
+    -- union all
     select * from logging_spend_hourly
     union all
     {%- for reader_usage_type in reader_usage_types %}
@@ -498,7 +491,7 @@ unioned as (
     union all
     select * from serverless_task_spend_hourly
     union all
-    select * exclude (_service_renamed) from other_costs
+    select * from other_costs
 )
 
 select
