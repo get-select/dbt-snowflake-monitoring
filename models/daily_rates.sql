@@ -23,19 +23,19 @@ dates_base as (
 
 rate_sheet_daily_base as (
     select
-        {% if var('uses_org_view', false) %}
         organization_name,
         account_name,
         account_locator,
-        {% endif %}
         date,
         usage_type,
         currency,
         effective_rate,
         service_type
     from {{ ref('stg_rate_sheet_daily') }}
+    {% if not var('uses_org_view', false) %}
     where
         account_locator = {{ account_locator() }}
+    {% endif %}
 ),
 
 stop_thresholds as (
@@ -57,7 +57,6 @@ date_range as (
 
 remaining_balance_daily as (
     select
-        organization_name,
         date,
         free_usage_balance + capacity_balance + on_demand_consumption_balance + rollover_balance as remaining_balance,
         remaining_balance < 0 as is_account_in_overage
@@ -66,36 +65,40 @@ remaining_balance_daily as (
 
 latest_remaining_balance_daily as (
     select
-        {% if var('uses_org_view', false) %}
-        organization_name,
-        account_name,
-        account_locator,
-        {% endif %}
         date,
         remaining_balance,
         is_account_in_overage
     from remaining_balance_daily
-    qualify row_number() over (order by account_name, date desc) = 1
+    qualify row_number() over (
+order by date desc) = 1
 ),
+
 rate_sheet_daily as (
     select rate_sheet_daily_base.*
     from rate_sheet_daily_base
     inner join date_range
         on rate_sheet_daily_base.date between date_range.start_date and date_range.end_date
 ),
+
 rates_date_range_w_usage_types as (
     select
         date_range.start_date,
         date_range.end_date,
+        {% if var('uses_org_view', false) %}
+        usage_types.account_name,
+        {% endif %}
         usage_types.usage_type
     from date_range
-    cross join (select distinct rate_sheet_daily.usage_type from rate_sheet_daily) as usage_types
+    cross join (select distinct rate_sheet_daily.account_name, rate_sheet_daily.usage_type from rate_sheet_daily) as usage_types
 ),
 
 base as (
     select
         db.date,
-        dr.usage_type
+        dr.usage_type,
+        {% if var('uses_org_view', false) %}
+        dr.account_name,
+        {% endif %}
     from dates_base as db
     inner join rates_date_range_w_usage_types as dr
         on db.date between dr.start_date and dr.end_date
@@ -103,13 +106,11 @@ base as (
 
 rates_w_overage as (
     select
-        {% if var('uses_org_view', false) %}
-        base.organization_name,
-        base.account_name,
-        base.account_locator,
-        {% endif %}
         base.date,
         base.usage_type,
+        {% if var('uses_org_view', false) %}
+        base.account_name,
+        {% endif %}
         coalesce(
             rate_sheet_daily.service_type,
             lag(rate_sheet_daily.service_type) ignore nulls over (partition by base.usage_type
@@ -151,12 +152,10 @@ order by base.date)
 
 rates as (
     select
-        {% if var('uses_org_view', false) %}
-        organization_name,
-        account_name,
-        account_locator,
-        {% endif %}
         date,
+        {% if var('uses_org_view', false) %}
+        account_name,
+        {% endif %}
         usage_type,
         associated_usage_type,
         service_type,
@@ -169,12 +168,10 @@ order by rate_priority desc) = 1
 )
 
 select
-    {% if var('uses_org_view', false) %}
-    organization_name,
-    account_name,
-    account_locator,
-    {% endif %}
     date,
+    {% if var('uses_org_view', false) %}
+    account_name,
+    {% endif %}
     associated_usage_type as usage_type,
     service_type,
     effective_rate,
