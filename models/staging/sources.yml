@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: snowflake_account_usage
     database: snowflake
-    schema: account_usage
+    schema: "{{ 'organization_usage' if var('uses_org_view', false) else 'account_usage' }}"
     tables:
       - name: access_history
       - name: database_storage_usage_history
