@@ -108,9 +108,7 @@ storage_spend_hourly as (
         on storage_terabytes_daily.date = daily_rates.date
             and daily_rates.service_type = 'STORAGE'
             and daily_rates.usage_type = 'storage'
-            and storage_terabytes_daily.organization_name = daily_rates.organization_name
             and storage_terabytes_daily.account_name = daily_rates.account_name
-            and storage_terabytes_daily.account_locator = daily_rates.account_locator
     group by all
 ),
 
