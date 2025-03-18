@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=['query_id', 'start_time'],
+    unique_key=['account_locator', 'query_id', 'start_time'],
 ) }}
 
 select

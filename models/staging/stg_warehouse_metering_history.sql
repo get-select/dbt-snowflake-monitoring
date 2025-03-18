@@ -1,6 +1,6 @@
 {{ config(
-    materialized='incremental', 
-    unique_key=['start_time', 'warehouse_id'],
+    materialized='incremental',
+    unique_key=['start_time', 'account_locator', 'warehouse_id'],
 ) }}
 
 select

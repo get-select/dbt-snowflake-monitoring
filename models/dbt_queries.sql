@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=['query_id', 'start_time']
+    unique_key=['query_id', 'account_locator', 'start_time']
 ) }}
 
 select
@@ -51,7 +51,7 @@ select
 from {{ ref('query_history_enriched') }}
 where dbt_metadata is not null
     {% if is_incremental() %}
-        -- Conservatively re-process the last 3 days to account for late arriving rates data which changes the cost per query. 
+        -- Conservatively re-process the last 3 days to account for late arriving rates data which changes the cost per query.
         -- Allow an override from project variable
         and end_time > (select coalesce(dateadd(day, -{{ var('dbt_snowflake_monitoring_incremental_days', '3') }}, max(end_time)), '1970-01-01') from {{ this }})
     {% endif %}
