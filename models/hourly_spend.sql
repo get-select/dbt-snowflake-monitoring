@@ -1,7 +1,7 @@
 -- depends_on: {{ ref('stg_metering_history') }}
 {{ config(
     materialized='table',
-    enabled=not(var('org_usage_view', false))
+    enabled=not(var('uses_org_view', false))
 ) }}
 
 with hour_spine as (
