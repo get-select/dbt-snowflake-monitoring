@@ -4,10 +4,6 @@
 select
     date,
     organization_name,
-    {% if var('uses_org_view', false) %}
-    account_name,
-    account_locator,
-    {% endif %}
     contract_number,
     currency,
     free_usage_balance,
