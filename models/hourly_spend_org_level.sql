@@ -413,7 +413,7 @@ cloud_services_spend_hourly as (
         on _cloud_services_usage_hourly.date = daily_rates.date
             and daily_rates.service_type = 'CLOUD_SERVICES'
             and daily_rates.usage_type = 'cloud services'
-            and _cloud_services_usage_hourly.account_name = daily_rates.account_name
+            and _cloud_services_usage_hourly.account_locator = daily_rates.account_locator
 ),
 
 other_costs as (
