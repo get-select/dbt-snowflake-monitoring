@@ -85,11 +85,11 @@ rates_date_range_w_usage_types as (
         date_range.start_date,
         date_range.end_date,
         {% if var('uses_org_view', false) %}
-        usage_types.account_name,
+        usage_types.account_locator,
         {% endif %}
         usage_types.usage_type
     from date_range
-    cross join (select distinct rate_sheet_daily.account_name, rate_sheet_daily.usage_type from rate_sheet_daily) as usage_types
+    cross join (select distinct rate_sheet_daily.account_locator, rate_sheet_daily.usage_type from rate_sheet_daily) as usage_types
 ),
 
 base as (
@@ -97,7 +97,7 @@ base as (
         db.date,
         dr.usage_type,
         {% if var('uses_org_view', false) %}
-        dr.account_name,
+        dr.account_locator,
         {% endif %}
     from dates_base as db
     inner join rates_date_range_w_usage_types as dr
@@ -109,7 +109,7 @@ rates_w_overage as (
         base.date,
         base.usage_type,
         {% if var('uses_org_view', false) %}
-        base.account_name,
+        base.account_locator,
         {% endif %}
         coalesce(
             rate_sheet_daily.service_type,
@@ -154,7 +154,7 @@ rates as (
     select
         date,
         {% if var('uses_org_view', false) %}
-        account_name,
+        account_locator,
         {% endif %}
         usage_type,
         associated_usage_type,
@@ -170,7 +170,7 @@ order by rate_priority desc) = 1
 select
     date,
     {% if var('uses_org_view', false) %}
-    account_name,
+    account_locator,
     {% endif %}
     associated_usage_type as usage_type,
     service_type,

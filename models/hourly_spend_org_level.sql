@@ -111,7 +111,7 @@ storage_spend_hourly as (
         on storage_terabytes_daily.date = daily_rates.date
             and daily_rates.service_type = 'STORAGE'
             and daily_rates.usage_type = 'storage'
-            and storage_terabytes_daily.account_name = daily_rates.account_name
+            and storage_terabytes_daily.account_locator = daily_rates.account_locator
     group by all
 ),
 
@@ -157,7 +157,7 @@ hybrid_table_storage_spend_hourly as (
         on _hybrid_table_terabytes_daily.date = daily_rates.date
             and daily_rates.service_type = 'HYBRID_TABLE_STORAGE'
             and daily_rates.usage_type = 'hybrid table storage'
-            and _hybrid_table_terabytes_daily.account_name = daily_rates.account_name
+            and _hybrid_table_terabytes_daily.account_locator = daily_rates.account_locator
     group by 1, 2, 3, 4, 5, 6, 7, 8
 ),
 
@@ -301,7 +301,7 @@ compute_spend_hourly as (
         on hours.hour::date = daily_rates.date
             and daily_rates.service_type = 'WAREHOUSE_METERING'
             and daily_rates.usage_type = 'compute'
-            and stg_warehouse_metering_history.account_name = daily_rates.account_name
+            and stg_warehouse_metering_history.account_locator = daily_rates.account_locator
     group by 1, 2, 3, 4, 5, 6, 7, 8
 ),
 
@@ -349,7 +349,7 @@ adj_for_incl_cloud_services_hourly as (
         on hours.hour::date = daily_rates.date
             and daily_rates.service_type = 'CLOUD_SERVICES'
             and daily_rates.usage_type = 'cloud services'
-            and stg_metering_daily_history.account_name = daily_rates.account_name
+            and stg_metering_daily_history.account_locator = daily_rates.account_locator
     group by 1, 2, 3, 4, 5, 6, 7, 8
 ),
 
@@ -408,7 +408,7 @@ cloud_services_spend_hourly as (
     from _cloud_services_usage_hourly
     inner join _cloud_services_billed_daily on
         _cloud_services_usage_hourly.date = _cloud_services_billed_daily.date
-        and _cloud_services_usage_hourly.account_name = _cloud_services_billed_daily.account_name
+        and _cloud_services_usage_hourly.account_locator = _cloud_services_billed_daily.account_locator
     left join {{ ref('daily_rates') }} as daily_rates
         on _cloud_services_usage_hourly.date = daily_rates.date
             and daily_rates.service_type = 'CLOUD_SERVICES'
