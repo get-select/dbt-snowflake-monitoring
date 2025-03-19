@@ -1,6 +1,8 @@
 {{ config(
     materialized='incremental',
-    unique_key=['query_id', 'account_locator', 'start_time'],
+    unique_key=
+        ['query_id', 'start_time', 'account_locator'] if var('uses_org_view', false) else
+        ['query_id', 'start_time']
 ) }}
 
 with
@@ -89,7 +91,7 @@ credits_billed_hourly as (
         organization_name,
         account_name,
         account_locator,
-        entity_id as warehouse_id,
+        warehouse_id,
         sum(credits_used_compute) as credits_used_compute,
         sum(credits_used_cloud_services) as credits_used_cloud_services,
     from {{ ref('stg_warehouse_metering_history') }}
