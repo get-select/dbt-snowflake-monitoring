@@ -376,7 +376,7 @@ _cloud_services_usage_hourly as (
 _cloud_services_billed_daily as (
     select
         date,
-        account_name,
+        account_locator,
         sum(credits_used_cloud_services) as credits_used_cloud_services,
         sum(
             credits_used_cloud_services + credits_adjustment_cloud_services

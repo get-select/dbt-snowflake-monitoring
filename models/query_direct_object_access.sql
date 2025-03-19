@@ -1,7 +1,7 @@
 {{
     config(
         materialized="incremental",
-        unique_key=["_unique_id", "account_locator", "query_start_time"],
+        unique_key=["_unique_id", "account_locator", "query_start_time"] if var('uses_org_view', false) else ["_unique_id", "query_start_time"],
     )
 }}
 
