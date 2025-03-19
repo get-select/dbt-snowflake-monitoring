@@ -113,24 +113,54 @@ rates_w_overage as (
         {% endif %}
         coalesce(
             rate_sheet_daily.service_type,
-            lag(rate_sheet_daily.service_type) ignore nulls over (partition by base.usage_type
-order by base.date),
-            lead(rate_sheet_daily.service_type) ignore nulls over (partition by base.usage_type
-order by base.date)
+            lag(rate_sheet_daily.service_type) ignore nulls over (
+                partition by base.usage_type
+                {% if var('uses_org_view', false) %}
+                , base.account_locator
+                {% endif %}
+                order by base.date
+            ),
+            lead(rate_sheet_daily.service_type) ignore nulls over (
+                partition by base.usage_type
+                {% if var('uses_org_view', false) %}
+                , base.account_locator
+                {% endif %}
+                order by base.date
+            )
         ) as service_type,
         coalesce(
             rate_sheet_daily.effective_rate,
-            lag(rate_sheet_daily.effective_rate) ignore nulls over (partition by base.usage_type
-order by base.date),
-            lead(rate_sheet_daily.effective_rate) ignore nulls over (partition by base.usage_type
-order by base.date)
+            lag(rate_sheet_daily.effective_rate) ignore nulls over (
+                partition by base.usage_type
+                {% if var('uses_org_view', false) %}
+                , base.account_locator
+                {% endif %}
+                order by base.date
+            ),
+            lead(rate_sheet_daily.effective_rate) ignore nulls over (
+                partition by base.usage_type
+                {% if var('uses_org_view', false) %}
+                , base.account_locator
+                {% endif %}
+                order by base.date
+            )
         ) as effective_rate,
         coalesce(
             rate_sheet_daily.currency,
-            lag(rate_sheet_daily.currency) ignore nulls over (partition by base.usage_type
-order by base.date),
-            lead(rate_sheet_daily.currency) ignore nulls over (partition by base.usage_type
-order by base.date)
+            lag(rate_sheet_daily.currency) ignore nulls over (
+                partition by base.usage_type
+                {% if var('uses_org_view', false) %}
+                , base.account_locator
+                {% endif %}
+                order by base.date
+            ),
+            lead(rate_sheet_daily.currency) ignore nulls over (
+                partition by base.usage_type
+                {% if var('uses_org_view', false) %}
+                , base.account_locator
+                {% endif %}
+                order by base.date
+            )
         ) as currency,
         base.usage_type like 'overage-%' as is_overage_rate,
         replace(base.usage_type, 'overage-', '') as associated_usage_type,
@@ -148,6 +178,9 @@ order by base.date)
     left join rate_sheet_daily
         on base.date = rate_sheet_daily.date
             and base.usage_type = rate_sheet_daily.usage_type
+            {% if var('uses_org_view', false) %}
+            and base.account_locator = rate_sheet_daily.account_locator
+            {% endif %}
 ),
 
 rates as (
@@ -163,8 +196,13 @@ rates as (
         currency,
         is_overage_rate
     from rates_w_overage
-    qualify row_number() over (partition by date, service_type, associated_usage_type
-order by rate_priority desc) = 1
+    qualify row_number() over (
+        partition by date, service_type, associated_usage_type
+        {% if var('uses_org_view', false) %}
+        , account_locator
+        {% endif %}
+        order by rate_priority desc
+    ) = 1
 )
 
 select
@@ -177,7 +215,12 @@ select
     effective_rate,
     currency,
     is_overage_rate,
-    row_number() over (partition by service_type, associated_usage_type
-order by date desc) = 1 as is_latest_rate
+    row_number() over (
+        partition by service_type, associated_usage_type
+        {% if var('uses_org_view', false) %}
+        , account_locator
+        {% endif %}
+        order by date desc
+    ) = 1 as is_latest_rate
 from rates
 order by date
