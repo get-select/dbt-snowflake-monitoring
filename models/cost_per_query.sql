@@ -119,8 +119,10 @@ query_cost as (
         query_seconds_per_hour.*,
         credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour as allocated_compute_credits_in_hour,
         allocated_compute_credits_in_hour * daily_rates.effective_rate as allocated_compute_cost_in_hour,
+        {% if not var('uses_org_view', false) %}
         credits_billed_hourly.credits_used_query_acceleration * query_seconds_per_hour.fraction_of_total_query_acceleration_bytes_scanned_in_hour as allocated_query_acceleration_credits_in_hour,
         allocated_query_acceleration_credits_in_hour * daily_rates.effective_rate as allocated_query_acceleration_cost_in_hour
+        {% endif %}
     from query_seconds_per_hour
     inner join credits_billed_hourly
         on query_seconds_per_hour.warehouse_id = credits_billed_hourly.warehouse_id
@@ -144,12 +146,14 @@ cost_per_query as (
         any_value(execution_start_time) as execution_start_time,
         sum(allocated_compute_cost_in_hour) as compute_cost,
         sum(allocated_compute_credits_in_hour) as compute_credits,
+        {% if not var('uses_org_view', false) %}
         sum(allocated_query_acceleration_cost_in_hour) as query_acceleration_cost,
         sum(allocated_query_acceleration_credits_in_hour) as query_acceleration_credits,
+        {% endif %}
         any_value(credits_used_cloud_services) as credits_used_cloud_services,
         any_value(ran_on_warehouse) as ran_on_warehouse
     from query_cost
-    group by 1
+    group by all
 ),
 
 credits_billed_daily as (
@@ -164,7 +168,7 @@ credits_billed_daily as (
         sum(credits_used_cloud_services) as daily_credits_used_cloud_services,
         greatest(daily_credits_used_cloud_services - daily_credits_used_compute * 0.1, 0) as daily_billable_cloud_services
     from credits_billed_hourly
-    group by 1
+    group by all
 ),
 
 all_queries as (
@@ -180,8 +184,10 @@ all_queries as (
         execution_start_time,
         compute_cost,
         compute_credits,
+        {% if not var('uses_org_view', false) %}
         query_acceleration_cost,
         query_acceleration_credits,
+        {% endif %}
         credits_used_cloud_services,
         ran_on_warehouse
     from cost_per_query
@@ -200,8 +206,10 @@ all_queries as (
         execution_start_time,
         0 as compute_cost,
         0 as compute_credits,
+        {% if not var('uses_org_view', false) %}
         0 as query_acceleration_cost,
         0 as query_acceleration_credits,
+        {% endif %}
         credits_used_cloud_services,
         ran_on_warehouse
     from filtered_queries
@@ -221,8 +229,10 @@ select
     all_queries.execution_start_time,
     all_queries.compute_cost,
     all_queries.compute_credits,
+    {% if not var('uses_org_view', false) %}
     all_queries.query_acceleration_cost,
     all_queries.query_acceleration_credits,
+    {% endif %}
     -- For the most recent day, which is not yet complete, this calculation won't be perfect.
     -- For example, at 12PM on the latest day, it's possible that cloud credits make up <10% of compute cost, so the queries
     -- from that day are not allocated any cloud_services_cost. The next time the model runs, after we have the full day of data,
