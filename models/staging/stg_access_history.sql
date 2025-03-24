@@ -1,7 +1,7 @@
 {{ config(materialized='incremental') }}
 
 select
-    {{ add_org_account_columns() }}
+    {{ add_account_columns() }}
     query_id,
     parent_query_id,
     root_query_id,

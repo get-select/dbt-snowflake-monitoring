@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=generate_scoped_unique_key(['start_time', 'warehouse_id'])
+    unique_key=['account_name', 'start_time', 'warehouse_id']
 ) }}
 
 select

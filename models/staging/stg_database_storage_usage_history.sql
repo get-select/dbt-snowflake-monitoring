@@ -1,7 +1,7 @@
 {{ config(materialized='view') }}
 
 select
-    {{ add_org_account_columns() }}
+    {{ add_account_columns() }}
     usage_date as date,
     database_name,
     average_database_bytes,
