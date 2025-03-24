@@ -30,7 +30,7 @@ rate_sheet_daily_base as (
         service_type
     from {{ ref('stg_rate_sheet_daily') }}
     where
-        account_locator = {{ account_locator() }}
+        account_name = {{ account_name() }}
 ),
 
 stop_thresholds as (
