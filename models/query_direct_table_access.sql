@@ -3,11 +3,9 @@ select
     query_id,
     query_start_time,
     user_name,
-    {% if var('uses_org_view', false) %}
     organization_name,
     account_name,
     account_locator,
-    {% endif %}
     object_name as full_table_name,
     table_id,
     columns_accessed

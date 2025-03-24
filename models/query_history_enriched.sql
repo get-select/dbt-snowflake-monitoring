@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=['query_id', 'start_time', 'account_locator'] if var('uses_org_view', false) else ['query_id', 'start_time'],
+    unique_key=generate_scoped_unique_key(['query_id', 'start_time']),
     pre_hook=["{{ create_merge_objects_udf(this) }}"]
 ) }}
 
@@ -42,11 +42,9 @@ cost_per_query as (
 
 select
     cost_per_query.query_id,
-    {% if var('uses_org_view', false) %}
     cost_per_query.organization_name,
     cost_per_query.account_name,
     cost_per_query.account_locator,
-    {% endif %}
     cost_per_query.compute_cost,
     cost_per_query.compute_credits,
     {% if not var('uses_org_view', false) %}

@@ -1,11 +1,7 @@
 {{ config(materialized='view') }}
 
 select
-    {% if var('uses_org_view', false) %}
-    organization_name,
-    account_name,
-    account_locator,
-    {% endif %}
+    {{ add_org_account_columns() }}
     usage_date as date,
     service_type,
     credits_used_cloud_services,

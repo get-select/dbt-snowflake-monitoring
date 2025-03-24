@@ -1,7 +1,7 @@
 {{
     config(
         materialized="incremental",
-        unique_key=["_unique_id", "account_locator", "query_start_time"] if var('uses_org_view', false) else ["_unique_id", "query_start_time"],
+        unique_key=generate_scoped_unique_key(['_unique_id', 'query_start_time']),
     )
 }}
 
@@ -28,11 +28,9 @@ access_history_flattened as (
         access_history.query_id,
         access_history.query_start_time,
         access_history.user_name,
-        {% if var('uses_org_view', false) %}
         access_history.organization_name,
         access_history.account_name,
         access_history.account_locator,
-        {% endif %}
         objects_accessed.value:objectId::integer as table_id, -- will be null for secured views or tables from a data share
         objects_accessed.value:objectName::text as object_name,
         objects_accessed.value:objectDomain::text as object_domain,
@@ -48,11 +46,9 @@ access_history_flattened_w_columns as (
         access_history_flattened.query_id,
         access_history_flattened.query_start_time,
         access_history_flattened.user_name,
-        {% if var('uses_org_view', false) %}
         access_history_flattened.organization_name,
         access_history_flattened.account_name,
         access_history_flattened.account_locator,
-        {% endif %}
         access_history_flattened.table_id,
         access_history_flattened.object_name,
         access_history_flattened.object_domain,

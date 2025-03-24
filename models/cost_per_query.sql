@@ -1,8 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=
-        ['query_id', 'start_time', 'account_locator'] if var('uses_org_view', false) else
-        ['query_id', 'start_time']
+    unique_key=generate_scoped_unique_key(['query_id', 'start_time'])
 ) }}
 
 with
@@ -13,11 +11,7 @@ stop_threshold as (
 
 filtered_queries as (
     select
-        {% if var('uses_org_view', false) %}
-        organization_name,
-        account_name,
-        account_locator,
-        {% endif %}
+        {{ add_account_columns() }}
         query_id,
         query_text as original_query_text,
         credits_used_cloud_services,
@@ -127,25 +121,19 @@ query_cost as (
     inner join credits_billed_hourly
         on query_seconds_per_hour.warehouse_id = credits_billed_hourly.warehouse_id
             and query_seconds_per_hour.hour = credits_billed_hourly.hour
-            {% if var('uses_org_view', false) %}
-            and query_seconds_per_hour.account_locator = credits_billed_hourly.account_locator
-            {% endif %}
+            and query_seconds_per_hour.account_name = credits_billed_hourly.account_name
     inner join {{ ref('daily_rates') }} as daily_rates
         on date(query_seconds_per_hour.start_time) = daily_rates.date
             and daily_rates.service_type = 'WAREHOUSE_METERING'
             and daily_rates.usage_type = 'compute'
-            {% if var('uses_org_view', false) %}
-            and daily_rates.account_locator = query_seconds_per_hour.account_locator
-            {% endif %}
+            and daily_rates.account_name = query_seconds_per_hour.account_name
 ),
 
 cost_per_query as (
     select
-        {% if var('uses_org_view', false) %}
         organization_name,
         account_name,
         account_locator,
-        {% endif %}
         query_id,
         any_value(start_time) as start_time,
         any_value(end_time) as end_time,
@@ -165,11 +153,9 @@ cost_per_query as (
 credits_billed_daily as (
     select
         date(hour) as date,
-        {% if var('uses_org_view', false) %}
         organization_name,
         account_name,
         account_locator,
-        {% endif %}
         sum(credits_used_compute) as daily_credits_used_compute,
         sum(credits_used_cloud_services) as daily_credits_used_cloud_services,
         greatest(daily_credits_used_cloud_services - daily_credits_used_compute * 0.1, 0) as daily_billable_cloud_services
@@ -179,11 +165,9 @@ credits_billed_daily as (
 
 all_queries as (
     select
-        {% if var('uses_org_view', false) %}
         organization_name,
         account_name,
         account_locator,
-        {% endif %}
         query_id,
         start_time,
         end_time,
@@ -201,11 +185,9 @@ all_queries as (
     union all
 
     select
-        {% if var('uses_org_view', false) %}
         organization_name,
         account_name,
         account_locator,
-        {% endif %}
         query_id,
         start_time,
         end_time,
@@ -224,11 +206,9 @@ all_queries as (
 )
 
 select
-    {% if var('uses_org_view', false) %}
     all_queries.organization_name,
     all_queries.account_name,
     all_queries.account_locator,
-    {% endif %}
     all_queries.query_id,
     all_queries.start_time,
     all_queries.end_time,
@@ -257,21 +237,15 @@ select
 from all_queries
 inner join credits_billed_daily
     on date(all_queries.start_time) = credits_billed_daily.date
-        {% if var('uses_org_view', false) %}
-        and all_queries.account_locator = credits_billed_daily.account_locator
-        {% endif %}
+        and all_queries.account_name = credits_billed_daily.account_name
 left join {{ ref('daily_rates') }} as daily_rates
     on date(all_queries.start_time) = daily_rates.date
         and daily_rates.service_type = 'CLOUD_SERVICES'
         and daily_rates.usage_type = 'cloud services'
-        {% if var('uses_org_view', false) %}
-        and daily_rates.account_locator = all_queries.account_locator
-        {% endif %}
+        and daily_rates.account_name = all_queries.account_name
 inner join {{ ref('daily_rates') }} as current_rates
     on current_rates.is_latest_rate
         and current_rates.service_type = 'CLOUD_SERVICES'
         and current_rates.usage_type = 'cloud services'
-        {% if var('uses_org_view', false) %}
-        and current_rates.account_locator = all_queries.account_locator
-        {% endif %}
+        and current_rates.account_name = all_queries.account_name
 order by all_queries.start_time asc

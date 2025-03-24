@@ -84,21 +84,17 @@ rates_date_range_w_usage_types as (
     select
         date_range.start_date,
         date_range.end_date,
-        {% if var('uses_org_view', false) %}
-        usage_types.account_locator,
-        {% endif %}
+        usage_types.account_name,
         usage_types.usage_type
     from date_range
-    cross join (select distinct rate_sheet_daily.account_locator, rate_sheet_daily.usage_type from rate_sheet_daily) as usage_types
+    cross join (select distinct rate_sheet_daily.account_name, rate_sheet_daily.usage_type from rate_sheet_daily) as usage_types
 ),
 
 base as (
     select
         db.date,
         dr.usage_type,
-        {% if var('uses_org_view', false) %}
-        dr.account_locator,
-        {% endif %}
+        dr.account_name
     from dates_base as db
     inner join rates_date_range_w_usage_types as dr
         on db.date between dr.start_date and dr.end_date
@@ -108,23 +104,17 @@ rates_w_overage as (
     select
         base.date,
         base.usage_type,
-        {% if var('uses_org_view', false) %}
-        base.account_locator,
-        {% endif %}
+        base.account_name,
         coalesce(
             rate_sheet_daily.service_type,
             lag(rate_sheet_daily.service_type) ignore nulls over (
                 partition by base.usage_type
-                {% if var('uses_org_view', false) %}
-                , base.account_locator
-                {% endif %}
+                , base.account_name
                 order by base.date
             ),
             lead(rate_sheet_daily.service_type) ignore nulls over (
                 partition by base.usage_type
-                {% if var('uses_org_view', false) %}
-                , base.account_locator
-                {% endif %}
+                , base.account_name
                 order by base.date
             )
         ) as service_type,
@@ -132,16 +122,12 @@ rates_w_overage as (
             rate_sheet_daily.effective_rate,
             lag(rate_sheet_daily.effective_rate) ignore nulls over (
                 partition by base.usage_type
-                {% if var('uses_org_view', false) %}
-                , base.account_locator
-                {% endif %}
+                , base.account_name
                 order by base.date
             ),
             lead(rate_sheet_daily.effective_rate) ignore nulls over (
                 partition by base.usage_type
-                {% if var('uses_org_view', false) %}
-                , base.account_locator
-                {% endif %}
+                , base.account_name
                 order by base.date
             )
         ) as effective_rate,
@@ -149,16 +135,12 @@ rates_w_overage as (
             rate_sheet_daily.currency,
             lag(rate_sheet_daily.currency) ignore nulls over (
                 partition by base.usage_type
-                {% if var('uses_org_view', false) %}
-                , base.account_locator
-                {% endif %}
+                , base.account_name
                 order by base.date
             ),
             lead(rate_sheet_daily.currency) ignore nulls over (
                 partition by base.usage_type
-                {% if var('uses_org_view', false) %}
-                , base.account_locator
-                {% endif %}
+                , base.account_name
                 order by base.date
             )
         ) as currency,
@@ -178,17 +160,13 @@ rates_w_overage as (
     left join rate_sheet_daily
         on base.date = rate_sheet_daily.date
             and base.usage_type = rate_sheet_daily.usage_type
-            {% if var('uses_org_view', false) %}
-            and base.account_locator = rate_sheet_daily.account_locator
-            {% endif %}
+            and base.account_name = rate_sheet_daily.account_name
 ),
 
 rates as (
     select
         date,
-        {% if var('uses_org_view', false) %}
-        account_locator,
-        {% endif %}
+        account_name,
         usage_type,
         associated_usage_type,
         service_type,
@@ -198,18 +176,14 @@ rates as (
     from rates_w_overage
     qualify row_number() over (
         partition by date, service_type, associated_usage_type
-        {% if var('uses_org_view', false) %}
-        , account_locator
-        {% endif %}
+        , account_name
         order by rate_priority desc
     ) = 1
 )
 
 select
     date,
-    {% if var('uses_org_view', false) %}
-    account_locator,
-    {% endif %}
+    account_name,
     associated_usage_type as usage_type,
     service_type,
     effective_rate,
@@ -217,9 +191,7 @@ select
     is_overage_rate,
     row_number() over (
         partition by service_type, associated_usage_type
-        {% if var('uses_org_view', false) %}
-        , account_locator
-        {% endif %}
+        , account_name
         order by date desc
     ) = 1 as is_latest_rate
 from rates
