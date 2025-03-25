@@ -34,7 +34,7 @@ rate_sheet_daily_base as (
     from {{ ref('stg_rate_sheet_daily') }}
     {% if not var('uses_org_view', false) %}
     where
-        account_locator = {{ account_locator() }}
+        account_name = {{ account_name() }}
     {% endif %}
 ),
 
