@@ -1,5 +1,7 @@
 {{
 config(
+    -- This model is temporary disabled for Organisation Account views until Snowflake includes metering_history
+    -- and severless_task_history views in the Organisation Account. They are planning this for Q2 (May - Jul) 2025.
     enabled=not(var('uses_org_view', false)))
 }}
 select

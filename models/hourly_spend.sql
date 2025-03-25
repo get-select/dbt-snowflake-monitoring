@@ -1,8 +1,11 @@
 -- depends_on: {{ ref('stg_metering_history') }}
 {{ config(
     materialized='table',
+    -- This model is temporary disabled for Organisation Account views until Snowflake includes metering_history
+    -- and severless_task_history views in the Organisation Account. They are planning this for Q2 (May - Jul) 2025.
     enabled=not(var('uses_org_view', false))
-) }}
+    )
+}}
 
 with hour_spine as (
     {% if execute %}
@@ -40,7 +43,7 @@ hours as (
 usage_in_currency_daily as (
     select
         usage_date,
-        account_locator,
+        account_name,
         replace(usage_type, 'overage-', '') as usage_type,
         currency,
         sum(usage_in_currency) as usage_in_currency,
@@ -157,7 +160,7 @@ data_transfer_spend_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        usage_in_currency_daily.account_name = {{ account_name() }}
         and usage_in_currency_daily.usage_type = 'data transfer'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
@@ -177,7 +180,7 @@ logging_spend_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        usage_in_currency_daily.account_name = {{ account_name() }}
         and usage_in_currency_daily.usage_type = 'logging'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
@@ -201,7 +204,7 @@ logging_spend_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        usage_in_currency_daily.account_name = {{ account_name() }}
         and usage_in_currency_daily.usage_type = '{{ reader_usage_type }}'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
@@ -219,7 +222,7 @@ reader_adj_for_incl_cloud_services_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        usage_in_currency_daily.account_name = {{ account_name() }}
         and usage_in_currency_daily.usage_type = 'reader adj for incl cloud services'
         and hours.hour::date = usage_in_currency_daily.usage_date
 ),
@@ -236,7 +239,7 @@ reader_cloud_services_hourly as (
         usage_in_currency_daily.currency as currency
     from hours
     left join usage_in_currency_daily on
-        usage_in_currency_daily.account_locator = {{ account_locator() }}
+        usage_in_currency_daily.account_name = {{ account_name() }}
         and usage_in_currency_daily.usage_type = 'reader cloud services'
         and hours.hour::date = usage_in_currency_daily.usage_date
     left join reader_adj_for_incl_cloud_services_hourly on
