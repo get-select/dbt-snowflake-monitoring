@@ -1,4 +1,7 @@
 select
+    organization_name,
+    account_name,
+    account_locator,
     _unique_id,
     query_id,
     query_start_time,

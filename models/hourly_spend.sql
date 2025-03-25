@@ -1,6 +1,11 @@
 -- depends_on: {{ ref('stg_metering_history') }}
-{{ config(materialized='table') }}
-
+{{ config(
+    materialized='table',
+    enabled=not(var('uses_org_view', false))
+    )
+}}
+-- This model is temporary disabled for Organisation Account views until Snowflake includes metering_history
+-- and severless_task_history views in the Organisation Account. They are planning this for Q2 (May - Jul) 2025.
 with hour_spine as (
     {% if execute %}
 {% set stg_metering_history_relation = load_relation(ref('stg_metering_history')) %}

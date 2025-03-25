@@ -1,3 +1,9 @@
+{{
+config(
+    enabled=not(var('uses_org_view', false)))
+}}
+-- This model is temporary disabled for Organisation Account views until Snowflake includes metering_history
+-- and severless_task_history views in the Organisation Account. They are planning this for Q2 (May - Jul) 2025.
 select
     convert_timezone('UTC', hour)::date as date, -- get UTC date to align with Snowflake billing
     service,

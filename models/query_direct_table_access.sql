@@ -3,6 +3,9 @@ select
     query_id,
     query_start_time,
     user_name,
+    organization_name,
+    account_name,
+    account_locator,
     object_name as full_table_name,
     table_id,
     columns_accessed
