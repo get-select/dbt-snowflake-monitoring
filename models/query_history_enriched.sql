@@ -45,6 +45,7 @@ select
     cost_per_query.organization_name,
     cost_per_query.account_name,
     cost_per_query.account_locator,
+    cost_per_query.region,
     cost_per_query.compute_cost,
     cost_per_query.compute_credits,
     {% if not var('uses_org_view', false) %}
