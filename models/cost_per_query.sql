@@ -92,7 +92,7 @@ credits_billed_hourly as (
         sum(credits_used_cloud_services) as credits_used_cloud_services,
     from {{ ref('stg_warehouse_metering_history') }}
     where true
-    group by 1, 2, 3, 4, 5
+    group by 1, 2, 3, 4, 5, 6
 ),
 {% else %}
 credits_billed_hourly as (
