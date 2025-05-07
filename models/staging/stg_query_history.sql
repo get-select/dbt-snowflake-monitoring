@@ -4,7 +4,7 @@
 ) }}
 
 select
-    {{ add_account_columns() }},
+    {{ add_account_columns() }}
     region,
     query_id,
     query_text,
