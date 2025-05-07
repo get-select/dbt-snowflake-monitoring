@@ -11,7 +11,8 @@ stop_threshold as (
 
 filtered_queries as (
     select
-        {{ add_account_columns() }}
+        {{ add_account_columns() }},
+        region,
         query_id,
         query_text as original_query_text,
         credits_used_cloud_services,
