@@ -13,3 +13,7 @@ clean-targets:
 models:
   # The config below applies only when running this package directly as a project, not when installed as a package in another project.
   +on_schema_change: "append_new_columns"
+
+# vars:
+#   dbt_snowflake_monitoring:
+#     uses_org_view: false  # default to false

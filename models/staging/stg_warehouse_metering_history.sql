@@ -1,9 +1,11 @@
 {{ config(
-    materialized='incremental', 
-    unique_key=['start_time', 'warehouse_id'],
+    materialized='incremental',
+    unique_key=['account_name', 'start_time', 'warehouse_id']
 ) }}
 
 select
+    {{ add_account_columns() }}
+    region,
     start_time,
     end_time,
     warehouse_id,

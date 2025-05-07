@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=['query_id', 'start_time'],
+    unique_key=['account_name', 'query_id', 'start_time']
 ) }}
 
 with
@@ -11,6 +11,8 @@ stop_threshold as (
 
 filtered_queries as (
     select
+        {{ add_account_columns() }}
+        region,
         query_id,
         query_text as original_query_text,
         credits_used_cloud_services,
@@ -77,6 +79,22 @@ query_seconds_per_hour as (
     from query_hours
 ),
 
+{% if var('uses_org_view', false) %}
+credits_billed_hourly as (
+    select
+        start_time as hour,
+        organization_name,
+        account_name,
+        account_locator,
+        region,
+        warehouse_id,
+        sum(credits_used_compute) as credits_used_compute,
+        sum(credits_used_cloud_services) as credits_used_cloud_services,
+    from {{ ref('stg_warehouse_metering_history') }}
+    where true
+    group by 1, 2, 3, 4, 5, 6
+),
+{% else %}
 credits_billed_hourly as (
     select
         start_time as hour,
@@ -89,60 +107,81 @@ credits_billed_hourly as (
         and service_type in ('QUERY_ACCELERATION', 'WAREHOUSE_METERING')
     group by 1, 2
 ),
+{% endif %}
 
 query_cost as (
     select
         query_seconds_per_hour.*,
         credits_billed_hourly.credits_used_compute * query_seconds_per_hour.fraction_of_total_query_time_in_hour as allocated_compute_credits_in_hour,
         allocated_compute_credits_in_hour * daily_rates.effective_rate as allocated_compute_cost_in_hour,
+        {% if not var('uses_org_view', false) %}
         credits_billed_hourly.credits_used_query_acceleration * query_seconds_per_hour.fraction_of_total_query_acceleration_bytes_scanned_in_hour as allocated_query_acceleration_credits_in_hour,
         allocated_query_acceleration_credits_in_hour * daily_rates.effective_rate as allocated_query_acceleration_cost_in_hour
+        {% endif %}
     from query_seconds_per_hour
     inner join credits_billed_hourly
         on query_seconds_per_hour.warehouse_id = credits_billed_hourly.warehouse_id
             and query_seconds_per_hour.hour = credits_billed_hourly.hour
+            and query_seconds_per_hour.account_name = credits_billed_hourly.account_name
     inner join {{ ref('daily_rates') }} as daily_rates
         on date(query_seconds_per_hour.start_time) = daily_rates.date
             and daily_rates.service_type = 'WAREHOUSE_METERING'
             and daily_rates.usage_type = 'compute'
+            and daily_rates.account_name = query_seconds_per_hour.account_name
 ),
 
 cost_per_query as (
     select
+        organization_name,
+        account_name,
+        account_locator,
+        region,
         query_id,
         any_value(start_time) as start_time,
         any_value(end_time) as end_time,
         any_value(execution_start_time) as execution_start_time,
         sum(allocated_compute_cost_in_hour) as compute_cost,
         sum(allocated_compute_credits_in_hour) as compute_credits,
+        {% if not var('uses_org_view', false) %}
         sum(allocated_query_acceleration_cost_in_hour) as query_acceleration_cost,
         sum(allocated_query_acceleration_credits_in_hour) as query_acceleration_credits,
+        {% endif %}
         any_value(credits_used_cloud_services) as credits_used_cloud_services,
         any_value(ran_on_warehouse) as ran_on_warehouse
     from query_cost
-    group by 1
+    group by all
 ),
 
 credits_billed_daily as (
     select
         date(hour) as date,
+        organization_name,
+        account_name,
+        account_locator,
+        region,
         sum(credits_used_compute) as daily_credits_used_compute,
         sum(credits_used_cloud_services) as daily_credits_used_cloud_services,
         greatest(daily_credits_used_cloud_services - daily_credits_used_compute * 0.1, 0) as daily_billable_cloud_services
     from credits_billed_hourly
-    group by 1
+    group by all
 ),
 
 all_queries as (
     select
+        organization_name,
+        account_name,
+        account_locator,
+        region,
         query_id,
         start_time,
         end_time,
         execution_start_time,
         compute_cost,
         compute_credits,
+        {% if not var('uses_org_view', false) %}
         query_acceleration_cost,
         query_acceleration_credits,
+        {% endif %}
         credits_used_cloud_services,
         ran_on_warehouse
     from cost_per_query
@@ -150,14 +189,20 @@ all_queries as (
     union all
 
     select
+        organization_name,
+        account_name,
+        account_locator,
+        region,
         query_id,
         start_time,
         end_time,
         execution_start_time,
         0 as compute_cost,
         0 as compute_credits,
+        {% if not var('uses_org_view', false) %}
         0 as query_acceleration_cost,
         0 as query_acceleration_credits,
+        {% endif %}
         credits_used_cloud_services,
         ran_on_warehouse
     from filtered_queries
@@ -166,33 +211,47 @@ all_queries as (
 )
 
 select
+    all_queries.organization_name,
+    all_queries.account_name,
+    all_queries.account_locator,
+    all_queries.region,
     all_queries.query_id,
     all_queries.start_time,
     all_queries.end_time,
     all_queries.execution_start_time,
     all_queries.compute_cost,
     all_queries.compute_credits,
+    {% if not var('uses_org_view', false) %}
     all_queries.query_acceleration_cost,
     all_queries.query_acceleration_credits,
+    {% endif %}
     -- For the most recent day, which is not yet complete, this calculation won't be perfect.
     -- For example, at 12PM on the latest day, it's possible that cloud credits make up <10% of compute cost, so the queries
     -- from that day are not allocated any cloud_services_cost. The next time the model runs, after we have the full day of data,
     -- this may change if cloud credits make up >10% of compute cost.
     (div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services) * coalesce(daily_rates.effective_rate, current_rates.effective_rate) as cloud_services_cost,
     div0(all_queries.credits_used_cloud_services, credits_billed_daily.daily_credits_used_cloud_services) * credits_billed_daily.daily_billable_cloud_services as cloud_services_credits,
+    {% if var('uses_org_view', false) %}
+    all_queries.compute_cost + cloud_services_cost as query_cost,
+    all_queries.compute_credits + cloud_services_credits as query_credits,
+    {% else %}
     all_queries.compute_cost + all_queries.query_acceleration_cost + cloud_services_cost as query_cost,
     all_queries.compute_credits + all_queries.query_acceleration_credits + cloud_services_credits as query_credits,
+    {% endif %}
     all_queries.ran_on_warehouse,
     coalesce(daily_rates.currency, current_rates.currency) as currency
 from all_queries
 inner join credits_billed_daily
     on date(all_queries.start_time) = credits_billed_daily.date
+        and all_queries.account_name = credits_billed_daily.account_name
 left join {{ ref('daily_rates') }} as daily_rates
     on date(all_queries.start_time) = daily_rates.date
         and daily_rates.service_type = 'CLOUD_SERVICES'
         and daily_rates.usage_type = 'cloud services'
+        and daily_rates.account_name = all_queries.account_name
 inner join {{ ref('daily_rates') }} as current_rates
     on current_rates.is_latest_rate
         and current_rates.service_type = 'CLOUD_SERVICES'
         and current_rates.usage_type = 'cloud services'
+        and current_rates.account_name = all_queries.account_name
 order by all_queries.start_time asc

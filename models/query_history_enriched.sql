@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=['query_id', 'start_time'],
+    unique_key=['account_name', 'query_id', 'start_time'],
     pre_hook=["{{ create_merge_objects_udf(this) }}"]
 ) }}
 
@@ -42,10 +42,16 @@ cost_per_query as (
 
 select
     cost_per_query.query_id,
+    cost_per_query.organization_name,
+    cost_per_query.account_name,
+    cost_per_query.account_locator,
+    cost_per_query.region,
     cost_per_query.compute_cost,
     cost_per_query.compute_credits,
+    {% if not var('uses_org_view', false) %}
     cost_per_query.query_acceleration_cost,
     cost_per_query.query_acceleration_credits,
+    {% endif %}
     cost_per_query.cloud_services_cost,
     cost_per_query.cloud_services_credits,
     cost_per_query.query_cost,

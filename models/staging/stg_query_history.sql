@@ -1,9 +1,11 @@
 {{ config(
     materialized='incremental',
-    unique_key=['query_id', 'start_time'],
+    unique_key=['account_name', 'query_id', 'start_time'],
 ) }}
 
 select
+    {{ add_account_columns() }}
+    region,
     query_id,
     query_text,
     database_id,
