@@ -28,9 +28,9 @@ with
             access_history.query_id,
             access_history.query_start_time,
             access_history.user_name,
-            objects_accessed.value:objectid::integer as table_id,  -- will be null for secured views or tables from a data share
-            objects_accessed.value:objectname::text as object_name,
-            objects_accessed.value:objectdomain::text as object_domain,
+            objects_accessed.value:"objectId"::integer as table_id,  -- will be null for secured views or tables from a data share
+            objects_accessed.value:"objectName"::text as object_name,
+            objects_accessed.value:"objectDomain"::text as object_domain,
             objects_accessed.value:columns as columns_array
 
         from
@@ -46,7 +46,7 @@ with
             access_history_flattened.table_id,
             access_history_flattened.object_name,
             access_history_flattened.object_domain,
-            array_agg(distinct columns.value:columnname::text) as columns_accessed
+            array_agg(distinct columns.value:"columnName"::text) as columns_accessed
         from
             access_history_flattened,
             lateral flatten(access_history_flattened.columns_array) as columns
