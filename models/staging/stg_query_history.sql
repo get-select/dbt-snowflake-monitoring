@@ -82,4 +82,6 @@ from {{ source('snowflake_account_usage', 'query_history') }}
     where end_time > (select dateadd(day, -{{ var('dbt_snowflake_monitoring_incremental_days', '2') }}, coalesce(max(end_time), '1970-01-01') ) from {{ this }})
 {% endif %}
 
+qualify row_number() over (partition by query_id order by start_time ) = 1
+
 order by start_time
