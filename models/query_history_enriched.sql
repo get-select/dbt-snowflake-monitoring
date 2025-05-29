@@ -1,4 +1,5 @@
 {{ config(
+    static_analysis="off",
     materialized='incremental',
     unique_key=['query_id', 'start_time'],
     pre_hook=["{{ create_merge_objects_udf(this) }}"]
