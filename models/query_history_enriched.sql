@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key=['account_name', 'query_id', 'start_time', 'error_message'],
+    unique_key=['account_name', 'query_id', 'start_time'],
     pre_hook=["{{ create_merge_objects_udf(this) }}"]
 ) }}
 
