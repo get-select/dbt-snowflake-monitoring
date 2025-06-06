@@ -13,7 +13,7 @@ query_history as (
         -- this removes comments enclosed by /* <comment text> */ and single line comments starting with -- and either ending with a new line or end of string
         regexp_replace(query_text, $$(\/\*(.|\n|\r)*?\*\/)|(--.*$)|(--.*(\n|\r))|;$$, '') as query_text_no_comments,
 
-        try_parse_json(regexp_substr(query_text, $$\/\*\s*({(.|\n|\r)*"app":\s"dbt"(.|\n|\r)*})\s*\*\/$$, 1, 1, 'ie')) as _dbt_json_comment_meta,
+        try_parse_json(regexp_substr(query_text, $$\/\*\s*({[^*]*?"app":\s*"dbt"[^*]*})\s*\*\/$$, 1, 1, 'ie')) as _dbt_json_comment_meta,
         case
             when try_parse_json(query_tag)['dbt_snowflake_query_tags_version'] is not null then try_parse_json(query_tag)
         end as _dbt_json_query_tag_meta,
