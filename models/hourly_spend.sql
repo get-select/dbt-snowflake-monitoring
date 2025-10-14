@@ -173,13 +173,13 @@ data_transfer_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as usage,
-        usage as usage_net_cloud_services,
-        usage as spend,
-        usage as spend_net_cloud_services,
+        null as usage,
+        null as usage_net_cloud_services,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        spend as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency,
-        usage_in_currency_daily.currency as usage_unit,
-        1 as usage_rate
+        null as usage_unit,
+        null as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -197,13 +197,13 @@ logging_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as usage,
-        usage as usage_net_cloud_services,
-        usage as spend,
-        usage as spend_net_cloud_services,
+        null as usage,
+        null as usage_net_cloud_services,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0)  as spend,
+        spend as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency,
-        usage_in_currency_daily.currency as usage_unit,
-        1 as usage_rate
+        null as usage_unit,
+        null as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -225,13 +225,13 @@ logging_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as usage,
-        usage as usage_net_cloud_services,
-        usage as spend,
-        usage as spend_net_cloud_services,
+        null as usage,
+        null as usage_net_cloud_services,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        spend as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency,
-        usage_in_currency_daily.currency as usage_unit,
-        1 as usage_rate
+        null as usage_unit,
+        null as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -247,13 +247,13 @@ reader_adj_for_incl_cloud_services_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as usage,
-        0 as usage_net_cloud_services,
-        usage as spend,
+        null as usage,
+        null as usage_net_cloud_services,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         0 as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency,
-        usage_in_currency_daily.currency as usage_unit,
-        1 as usage_rate
+        null as usage_unit,
+        null as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -268,13 +268,13 @@ reader_cloud_services_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as usage,
-        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) + reader_adj_for_incl_cloud_services_hourly.spend as usage_net_cloud_services,
-        usage as spend,
-        usage_net_cloud_services as spend_net_cloud_services,
+        null as usage,
+        null as usage_net_cloud_services,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
+        coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) + reader_adj_for_incl_cloud_services_hourly.spend as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency,
-        usage_in_currency_daily.currency as usage_unit,
-        1 as usage_rate
+        null as usage_unit,
+        null as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
