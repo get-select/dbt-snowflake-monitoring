@@ -132,7 +132,7 @@ hybrid_table_storage_spend_hourly as (
         coalesce(
             sum(
                 div0(
-                    storage_terabytes_daily.storage_terabytes,
+                    _hybrid_table_terabytes_daily.storage_terabytes,
                     hours.days_in_month * 24
                 )
             ),
