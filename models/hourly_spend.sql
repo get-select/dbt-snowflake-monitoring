@@ -254,7 +254,7 @@ reader_adj_for_incl_cloud_services_hourly as (
         0 as spend_net_cloud_services,
         usage_in_currency_daily.currency as currency,
         'Credits' as usage_unit,
-        round(div0(usage_in_currency_daily.usage_in_currency, usage_in_currency_daily.usage), 2) as usage_rate as usage_rate
+        round(div0(usage_in_currency_daily.usage_in_currency, usage_in_currency_daily.usage), 2) as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
