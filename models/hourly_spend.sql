@@ -425,7 +425,7 @@ cloud_services_spend_hourly as (
                 _cloud_services_usage_hourly.credits_used_cloud_services,
                 _cloud_services_billed_daily.credits_used_cloud_services
             ) * _cloud_services_billed_daily.credits_used_cloud_services_billable
-        ) as usage_net_cloud_services
+        ) as usage_net_cloud_services,
         usage * daily_rates.effective_rate as spend,
         usage_net_cloud_services * daily_rates.effective_rate as spend_net_cloud_services,
         daily_rates.currency,
