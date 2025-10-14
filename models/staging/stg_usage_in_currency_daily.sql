@@ -10,5 +10,6 @@ select
     currency,
     usage,
     usage_in_currency,
-    balance_source
+    balance_source,
+    rating_type
 from {{ source('snowflake_organization_usage', 'usage_in_currency_daily') }}
