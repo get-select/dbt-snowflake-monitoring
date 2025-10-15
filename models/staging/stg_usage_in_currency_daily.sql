@@ -11,5 +11,8 @@ select
     usage,
     usage_in_currency,
     balance_source,
-    rating_type
+    billing_type,
+    rating_type,
+    service_type,
+    is_adjustment
 from {{ source('snowflake_organization_usage', 'usage_in_currency_daily') }}
