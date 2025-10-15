@@ -41,6 +41,7 @@ usage_in_currency_daily as (
         replace(usage_type, 'overage-', '') as usage_type,
         currency,
         sum(usage_in_currency) as usage_in_currency,
+        sum(usage) as usage,
     from {{ ref('stg_usage_in_currency_daily') }}
     group by all
 ),
@@ -83,12 +84,24 @@ storage_spend_hourly as (
                 div0(
                     storage_terabytes_daily.storage_terabytes,
                     hours.days_in_month * 24
+                )
+            ),
+            0
+        ) as usage,
+        usage as usage_net_cloud_services,
+        coalesce(
+            sum(
+                div0(
+                    storage_terabytes_daily.storage_terabytes,
+                    hours.days_in_month * 24
                 ) * daily_rates.effective_rate
             ),
             0
         ) as spend,
         spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
+        any_value(daily_rates.currency) as currency,
+        'TB' as usage_unit,
+        any_value(daily_rates.effective_rate) as usage_rate
     from hours
     left join storage_terabytes_daily on hours.date = convert_timezone('UTC', storage_terabytes_daily.date)
     left join {{ ref('daily_rates') }} as daily_rates
@@ -122,12 +135,24 @@ hybrid_table_storage_spend_hourly as (
                 div0(
                     _hybrid_table_terabytes_daily.storage_terabytes,
                     hours.days_in_month * 24
+                )
+            ),
+            0
+        ) as usage,
+        usage as usage_net_cloud_services,
+        coalesce(
+            sum(
+                div0(
+                    _hybrid_table_terabytes_daily.storage_terabytes,
+                    hours.days_in_month * 24
                 ) * daily_rates.effective_rate
             ),
             0
         ) as spend,
         spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
+        any_value(daily_rates.currency) as currency,
+        'TB' as usage_unit,
+        any_value(daily_rates.effective_rate) as usage_rate
     from hours
     left join _hybrid_table_terabytes_daily on hours.date = convert_timezone('UTC', _hybrid_table_terabytes_daily.date)
     left join {{ ref('daily_rates') }} as daily_rates
@@ -149,9 +174,13 @@ data_transfer_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage_net_cloud_services,
         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
-        usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency,
+        'TB' as usage_unit,
+        round(div0(usage_in_currency_daily.usage_in_currency, usage_in_currency_daily.usage), 2) as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -169,9 +198,13 @@ logging_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage_net_cloud_services,
         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
-        usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency,
+        'Credits' as usage_unit,
+        round(div0(usage_in_currency_daily.usage_in_currency, usage_in_currency_daily.usage), 2) as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -193,9 +226,13 @@ logging_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage_net_cloud_services,
         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         spend as spend_net_cloud_services,
-        usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency,
+        '{% if reader_usage_type == "reader compute" %}Credits{% else %}TB{% endif %}' as usage_unit,
+        round(div0(usage_in_currency_daily.usage_in_currency, usage_in_currency_daily.usage), 2) as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -211,9 +248,13 @@ reader_adj_for_incl_cloud_services_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage,
+        0 as usage_net_cloud_services,
         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         0 as spend_net_cloud_services,
-        usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency,
+        'Credits' as usage_unit,
+        round(div0(usage_in_currency_daily.usage_in_currency, usage_in_currency_daily.usage), 2) as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -228,9 +269,13 @@ reader_cloud_services_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) as usage,
+        coalesce(usage_in_currency_daily.usage / hours.hours_thus_far, 0) + reader_adj_for_incl_cloud_services_hourly.usage as usage_net_cloud_services,
         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) as spend,
         coalesce(usage_in_currency_daily.usage_in_currency / hours.hours_thus_far, 0) + reader_adj_for_incl_cloud_services_hourly.spend as spend_net_cloud_services,
-        usage_in_currency_daily.currency as currency
+        usage_in_currency_daily.currency as currency,
+        'Credits' as usage_unit,
+        round(div0(usage_in_currency_daily.usage_in_currency, usage_in_currency_daily.usage), 2) as usage_rate
     from hours
     left join usage_in_currency_daily on
         usage_in_currency_daily.account_name = {{ account_name() }}
@@ -247,6 +292,8 @@ compute_spend_hourly as (
         null as storage_type,
         stg_metering_history.name as warehouse_name,
         null as database_name,
+        coalesce(sum(stg_metering_history.credits_used_compute),0) as usage,
+        usage as usage_net_cloud_services,
         coalesce(
             sum(
                 stg_metering_history.credits_used_compute * daily_rates.effective_rate
@@ -254,7 +301,9 @@ compute_spend_hourly as (
             0
         ) as spend,
         spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
+        any_value(daily_rates.currency) as currency,
+        'Credits' as usage_unit,
+        any_value(daily_rates.effective_rate) as usage_rate
     from hours
     left join {{ ref('stg_metering_history') }} as stg_metering_history on
         hours.hour = convert_timezone(
@@ -276,6 +325,8 @@ serverless_task_spend_hourly as (
         null as storage_type,
         null as warehouse_name,
         stg_serverless_task_history.database_name,
+        coalesce(sum(stg_serverless_task_history.credits_used),0) as usage,
+        usage as usage_net_cloud_services,
         coalesce(
             sum(
                 stg_serverless_task_history.credits_used * daily_rates.effective_rate
@@ -283,7 +334,9 @@ serverless_task_spend_hourly as (
             0
         ) as spend,
         spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
+        any_value(daily_rates.currency) as currency,
+        'Credits' as usage_unit,
+        any_value(daily_rates.effective_rate) as usage_rate
     from hours
     left join {{ ref('stg_serverless_task_history') }} as stg_serverless_task_history on
         hours.hour = date_trunc('hour', stg_serverless_task_history.start_time)
@@ -301,6 +354,8 @@ adj_for_incl_cloud_services_hourly as (
         null as storage_type,
         null as warehouse_name,
         null as database_name,
+        coalesce(sum(stg_metering_daily_history.credits_adjustment_cloud_services), 0) as usage,
+        0 as usage_net_cloud_services,
         coalesce(
             sum(
                 stg_metering_daily_history.credits_adjustment_cloud_services * daily_rates.effective_rate
@@ -308,7 +363,9 @@ adj_for_incl_cloud_services_hourly as (
             0
         ) as spend,
         0 as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
+        any_value(daily_rates.currency) as currency,
+        'Credits' as usage_unit,
+        any_value(daily_rates.effective_rate) as usage_rate
     from hours
     left join {{ ref('stg_metering_daily_history') }} as stg_metering_daily_history on
         hours.hour = stg_metering_daily_history.date
@@ -363,15 +420,18 @@ cloud_services_spend_hourly as (
         _cloud_services_usage_hourly.storage_type,
         _cloud_services_usage_hourly.warehouse_name,
         _cloud_services_usage_hourly.database_name,
-        _cloud_services_usage_hourly.credits_used_cloud_services * daily_rates.effective_rate as spend,
-
+        _cloud_services_usage_hourly.credits_used_cloud_services as usage,
         (
             div0(
                 _cloud_services_usage_hourly.credits_used_cloud_services,
                 _cloud_services_billed_daily.credits_used_cloud_services
             ) * _cloud_services_billed_daily.credits_used_cloud_services_billable
-        ) * daily_rates.effective_rate as spend_net_cloud_services,
-        daily_rates.currency
+        ) as usage_net_cloud_services,
+        usage * daily_rates.effective_rate as spend,
+        usage_net_cloud_services * daily_rates.effective_rate as spend_net_cloud_services,
+        daily_rates.currency,
+        'Credits' as usage_unit,
+        daily_rates.effective_rate as usage_rate
     from _cloud_services_usage_hourly
     inner join _cloud_services_billed_daily on
         _cloud_services_usage_hourly.date = _cloud_services_billed_daily.date
@@ -413,6 +473,8 @@ other_costs as (
         end as warehouse_name,
         null as database_name,
 
+        coalesce(sum(stg_metering_history.credits_used), 0) as usage,
+        usage as usage_net_cloud_services,
         coalesce(
             sum(
                 stg_metering_history.credits_used * daily_rates.effective_rate
@@ -420,7 +482,9 @@ other_costs as (
             0
         ) as spend,
         spend as spend_net_cloud_services,
-        any_value(daily_rates.currency) as currency
+        any_value(daily_rates.currency) as currency,
+        'Credits' as usage_unit,
+        any_value(daily_rates.effective_rate) as usage_rate
 
     from hours
 
@@ -478,7 +542,11 @@ select
     storage_type,
     warehouse_name,
     database_name,
+    usage,
+    usage_net_cloud_services,
     spend,
     spend_net_cloud_services,
-    currency
+    currency,
+    usage_unit,
+    usage_rate
 from unioned

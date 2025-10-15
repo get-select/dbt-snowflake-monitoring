@@ -14,9 +14,17 @@ models:
       description: Subcategories where service = "Compute" or "Cloud Services".
     - name: database_name
       description: Subcategories where service = "Serverless Tasks" or service = "Storage" and storage_type = "Table and Time Travel" or "Failsafe".
+    - name: usage
+      description: Usage of the service in the units described by the 'usage_unit' column (i.e. TB, Credits, etc.).
+    - name: usage_net_cloud_services
+      description: Usage with cloud service adjustments taken into account. The service 'Adj For Incl Cloud Services' has a value of 0 for this column.
     - name: spend
       description: Spend in the currency described by the 'currency' column
     - name: spend_net_cloud_services
       description: Spend with cloud service adjustments taken into account. The service 'Adj For Incl Cloud Services' has a value of 0 for this column.
     - name: currency
       description: Spend currency, retrieved from Snowflake's daily rate sheet
+    - name: usage_unit
+      description: The units of the usage column (i.e. TB, Credits, etc.).
+    - name: usage_rate
+      description: Usage rate, retrieved from the rate sheet, in units per currency.
