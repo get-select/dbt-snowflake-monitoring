@@ -2,8 +2,8 @@ version: 2
 
 sources:
   - name: snowflake_account_usage
-    database: snowflake
-    schema: account_usage
+    database: "{{ var('snowflake_account_usage_database', 'snowflake') }}"
+    schema: "{{ var('snowflake_account_usage_schema', 'account_usage') }}"
     tables:
       - name: access_history
       - name: database_storage_usage_history
@@ -16,8 +16,8 @@ sources:
       - name: warehouse_metering_history
 
   - name: snowflake_organization_usage
-    database: snowflake
-    schema: organization_usage
+    database: "{{ var('snowflake_account_usage_database', 'snowflake') }}"
+    schema: "{{ var('snowflake_account_usage_schema', 'organization_usage') }}"
     tables:
       - name: rate_sheet_daily
       - name: remaining_balance_daily
