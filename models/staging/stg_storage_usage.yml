@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: stg_storage_usage
+    description: See https://docs.snowflake.com/en/sql-reference/account-usage/storage_usage
+    columns:
+      - name: date
+        description: Date (in the UTC time zone) of this storage usage record.
+      - name: storage_bytes
+        description: Number of bytes of database storage used, including data in Time Travel.
+      - name: stage_bytes
+        description: Number of bytes of stage storage used by files in all internal stages (named, table, and user).
+      - name: failsafe_bytes
+        description: Number of bytes of Fail-safe storage used.
+      - name: hybrid_table_storage_bytes
+        description: Number of bytes of hybrid table storage used (data in the row store).
+      - name: archive_storage_cool_bytes
+        description: Number of all bytes of table storage used in the COOL storage tier, including active bytes, Fail-safe bytes, Time Travel bytes, and bytes subject to minimum storage duration charges.
+      - name: archive_storage_cold_bytes
+        description: Number of all bytes of table storage used in the COLD storage tier, including active bytes, Fail-safe bytes, Time Travel bytes, and bytes subject to minimum storage duration charges.
+      - name: archive_storage_retrieval_temp_bytes
+        description: Number of bytes used in the standard storage tier, during data retrieval from the COLD storage tier.
