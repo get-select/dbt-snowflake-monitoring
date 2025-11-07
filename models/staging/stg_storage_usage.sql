@@ -9,4 +9,4 @@ select
     archive_storage_cool_bytes,
     archive_storage_cold_bytes,
     archive_storage_retrieval_temp_bytes
-from {{ source('snowflake_account_usage', 'storage_usage_history') }}
+from {{ source('snowflake_account_usage', 'storage_usage') }}
