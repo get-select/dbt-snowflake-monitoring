@@ -46,6 +46,30 @@ usage_in_currency_daily as (
     group by all
 ),
 
+total_itemized_storage_bytes_daily as (
+    select
+        date,
+        sum(average_database_bytes) / power(1024, 4) as database_storage_terabytes,
+        sum(average_failsafe_bytes) / power(1024, 4) as failsafe_storage_terabytes
+    from {{ ref('stg_database_storage_usage_history') }}
+    group by 1
+),
+
+-- There's a known difference between the total storage bytes reported in the storage_usage view
+-- and the sum of the itemized storage bytes reported in the database_storage_usage_history view.
+-- Snowflake invoicing aligns more closely with the storage_usage view, and the difference is reported
+-- as being due to storage relating to deleted objects, but retained due to retained clones.
+total_reconciled_storage_bytes_daily as (
+    select
+        stg_storage_usage.date,
+        stg_storage_usage.storage_bytes / power(1024, 4) as storage_terabytes,
+        stg_storage_usage.failsafe_bytes / power(1024, 4) as failsafe_terabytes,
+        storage_terabytes - total_itemized_storage_bytes_daily.database_storage_terabytes as residual_storage_terabytes,
+        failsafe_terabytes - total_itemized_storage_bytes_daily.failsafe_storage_terabytes as residual_failsafe_terabytes
+    from {{ ref('stg_storage_usage') }} as stg_storage_usage
+    left join total_itemized_storage_bytes_daily on stg_storage_usage.date = total_itemized_storage_bytes_daily.date
+),
+
 storage_terabytes_daily as (
     select
         date,
@@ -70,6 +94,22 @@ storage_terabytes_daily as (
         sum(average_stage_bytes) / power(1024, 4) as storage_terabytes
     from {{ ref('stg_stage_storage_usage_history') }}
     group by 1, 2, 3
+    union all
+    select
+        date,
+        'Retained for Clones' as storage_type,
+        null as database_name,
+        residual_storage_terabytes as storage_terabytes
+    from total_reconciled_storage_bytes_daily
+    where residual_storage_terabytes > 0
+    union all
+    select
+        date,
+        'Failsafe Retained for Clones' as storage_type,
+        null as database_name,
+        residual_failsafe_terabytes as storage_terabytes
+    from total_reconciled_storage_bytes_daily
+    where residual_failsafe_terabytes > 0
 ),
 
 storage_spend_hourly as (

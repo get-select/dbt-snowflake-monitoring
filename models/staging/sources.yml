@@ -12,6 +12,7 @@ sources:
       - name: query_history
       - name: serverless_task_history
       - name: stage_storage_usage_history
+      - name: storage_usage
       - name: warehouse_events_history
       - name: warehouse_metering_history
 
