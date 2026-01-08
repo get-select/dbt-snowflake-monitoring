@@ -5,6 +5,11 @@ config-version: 2
 profile: dbt_snowflake_monitoring
 
 model-paths: ["models"]
+# silence warnings about missing paths
+seed-paths: []
+test-paths: []
+analysis-paths: []
+snapshot-paths: []
 
 clean-targets:
   - target
