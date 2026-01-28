@@ -1,6 +1,7 @@
 name: 'dbt_snowflake_monitoring'
-version: '5.5.0'
+version: '5.5.1'
 config-version: 2
+require-dbt-version: "<3.0.0"
 
 profile: dbt_snowflake_monitoring
 
