@@ -1,8 +1,7 @@
 {{ config(
     static_analysis="off",
     materialized='incremental',
-    unique_key=['query_id', 'start_time'],
-    pre_hook=["{{ create_merge_objects_udf(this) }}"]
+    unique_key=['query_id', 'start_time']
 ) }}
 
 with
@@ -19,7 +18,10 @@ query_history as (
         end as _dbt_json_query_tag_meta,
         case
             when _dbt_json_comment_meta is not null or _dbt_json_query_tag_meta is not null then
-                {{ adapter.quote_as_configured(this.database, 'database') }}.{{ adapter.quote_as_configured(this.schema, 'schema') }}.merge_objects(coalesce(_dbt_json_comment_meta, { }), coalesce(_dbt_json_query_tag_meta, { }))
+                map_cat(
+                    coalesce(_dbt_json_comment_meta, { })::map(varchar, variant),
+                    coalesce(_dbt_json_query_tag_meta, { })::map(varchar, variant)
+                )::variant
         end as dbt_metadata
 
     from {{ ref('stg_query_history') }}
