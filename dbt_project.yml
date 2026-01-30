@@ -6,6 +6,11 @@ require-dbt-version: "<3.0.0"
 profile: dbt_snowflake_monitoring
 
 model-paths: ["models"]
+# silence warnings about missing paths
+seed-paths: []
+test-paths: []
+analysis-paths: []
+snapshot-paths: []
 
 clean-targets:
   - target
@@ -14,3 +19,6 @@ clean-targets:
 models:
   # The config below applies only when running this package directly as a project, not when installed as a package in another project.
   +on_schema_change: "append_new_columns"
+# need to better understand this flag
+flags:
+  require_generic_test_arguments_property: true
