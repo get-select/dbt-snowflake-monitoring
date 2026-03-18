@@ -4,7 +4,10 @@
 ) }}
 
 select
-    dbt_metadata['dbt_snowflake_query_tags_version']::string as dbt_snowflake_query_tags_version, -- this will be null where the metadata came from a query comment in dbt-snowflake-monitoring versions <2.0.0
+    coalesce(
+        dbt_metadata['dbt_query_tags_version']::string,
+        dbt_metadata['dbt_snowflake_query_tags_version']::string
+    ) as dbt_snowflake_query_tags_version, -- this will be null where the metadata came from a query comment in dbt-snowflake-monitoring versions <2.0.0
     dbt_metadata['invocation_id']::string as dbt_invocation_id,
     dbt_metadata['node_id']::string as dbt_node_id,
     dbt_metadata['node_resource_type']::string as dbt_node_resource_type,

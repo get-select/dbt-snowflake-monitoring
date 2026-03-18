@@ -14,7 +14,9 @@ query_history as (
 
         try_parse_json(regexp_substr(query_text, $$\/\*\s*({[^*]*?"app":\s*"dbt"[^*]*})\s*\*\/$$, 1, 1, 'ie')) as _dbt_json_comment_meta,
         case
-            when try_parse_json(query_tag)['dbt_snowflake_query_tags_version'] is not null then try_parse_json(query_tag)
+            when try_parse_json(query_tag)['dbt_snowflake_query_tags_version'] is not null
+                or try_parse_json(query_tag)['dbt_query_tags_version'] is not null
+            then try_parse_json(query_tag)
         end as _dbt_json_query_tag_meta,
         case
             when _dbt_json_comment_meta is not null or _dbt_json_query_tag_meta is not null then
