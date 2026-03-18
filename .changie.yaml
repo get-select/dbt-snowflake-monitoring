@@ -32,7 +32,7 @@ custom:
 footerFormat: |
   {{- $contributorDict := dict }}
   {{- /* any names added to this list should be all lowercase for later matching purposes */}}
-  {{- $core_team := list "niallrees" "ian-whitestone" }}
+  {{- $core_team := list "niallrees" "ian-whitestone" "greg-finley" }}
   {{- range $change := .Changes }}
     {{- $authorList := splitList " " $change.Custom.Author }}
     {{- /* loop through all authors for a PR */}}

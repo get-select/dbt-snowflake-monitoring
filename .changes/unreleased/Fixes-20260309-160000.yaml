@@ -1,6 +1,0 @@
-kind: Fixes
-body: Update deprecated dbt_snowflake_query_tags dependency to dbt_query_tags (v3.0.x), with backward compatibility for historical data using the old key name
-time: 2026-03-09T00:00:00.000000000Z
-custom:
-  Author: francois-blanchard
-  PR: "202"
