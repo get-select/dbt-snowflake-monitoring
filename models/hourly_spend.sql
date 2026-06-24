@@ -501,6 +501,9 @@ other_costs as (
         case _service_renamed
             when 'MATERIALIZED_VIEW' then 'Materialized Views'
             when 'AI_SERVICES' then 'AI Services'
+            when 'CORTEX_CODE_SNOWSIGHT' then 'Cortex Code: Snowsight'
+            when 'CORTEX_CODE_CLI' then 'Cortex Code: Cli'
+            when 'SERVERLESS_TASK' then 'Serverless Tasks'
             else initcap(replace(_service_renamed, '_', ' '))
         end as service,
 
