@@ -1,0 +1,6 @@
+kind: Fixes
+body: Fixed Cortex Code and Serverless tasks service_types not showing up in hourly_spend and daily_spend.
+time: 2026-06-25T14:43:01.2406809+02:00
+custom:
+    Author: RichardGoerlerKS
+    PR: "204"
