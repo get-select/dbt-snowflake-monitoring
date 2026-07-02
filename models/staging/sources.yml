@@ -4,6 +4,8 @@ sources:
   - name: snowflake_account_usage
     database: "{{ var('snowflake_account_usage_database', 'snowflake') }}"
     schema: "{{ var('snowflake_account_usage_schema', 'account_usage') }}"
+    config:
+      freshness: null
     tables:
       - name: access_history
       - name: database_storage_usage_history
@@ -19,6 +21,8 @@ sources:
   - name: snowflake_organization_usage
     database: "{{ var('snowflake_account_usage_database', 'snowflake') }}"
     schema: "{{ var('snowflake_account_usage_schema', 'organization_usage') }}"
+    config:
+      freshness: null
     tables:
       - name: rate_sheet_daily
       - name: remaining_balance_daily
