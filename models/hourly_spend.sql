@@ -492,6 +492,8 @@ other_costs as (
         case stg_metering_history.service_type
             when 'AUTO_CLUSTERING' then 'AUTOMATIC_CLUSTERING'
             when 'PIPE' then 'SNOWPIPE'
+            when 'CORTEX_CODE_CLI' then 'SNOWFLAKE_COCO_CLI'
+            when 'CORTEX_CODE_SNOWSIGHT' then 'SNOWFLAKE_COCO_SNOWSIGHT'
             else stg_metering_history.service_type
         end as _service_renamed,
 
@@ -501,6 +503,9 @@ other_costs as (
         case _service_renamed
             when 'MATERIALIZED_VIEW' then 'Materialized Views'
             when 'AI_SERVICES' then 'AI Services'
+            when 'SNOWFLAKE_COCO_SNOWSIGHT' then 'Snowflake CoCo: Snowsight'
+            when 'SNOWFLAKE_COCO_CLI' then 'Snowflake CoCo: Cli'
+            when 'SERVERLESS_TASK' then 'Serverless Tasks'
             else initcap(replace(_service_renamed, '_', ' '))
         end as service,
 
