@@ -22,7 +22,7 @@ models:
         description: Alias set for the node.
       - name: dbt_node_meta
         description: Dict of any meta set for the node.
-      - name: dbt_node_tags
+      - name: node_tags
         description: Array of all tags set for the node.
       - name: dbt_node_refs
         description: Array of all refs used by the node.

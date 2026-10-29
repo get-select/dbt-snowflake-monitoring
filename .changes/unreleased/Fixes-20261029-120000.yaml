@@ -1,0 +1,6 @@
+kind: Fixes
+body: Document the dbt_queries tags column by its real name, node_tags, so persist_docs no longer warns that dbt_node_tags is missing
+time: 2026-10-29T12:00:00.000000000Z
+custom:
+  Author: acrahen
+  PR: "207"
